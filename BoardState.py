@@ -55,7 +55,7 @@ class BoardState:
         self.longestRoad = None
 
 
-    def buildSettle(self, pname, coordinate, start=False):
+    def buildSettle(self, pname, coordinate, start=False, verbose=True):
         player = self.players[pname]
         intersection = BoardState.graph.intersections[coordinate]
 
@@ -82,13 +82,14 @@ class BoardState:
         # Spend that money
         if not start :
             player.removeResources(D.supplyCost("Settlement"))
-            
-        print ("Player %s built settlement at %s" % (pname, intersection))
+
+        if verbose:  
+            print ("Player %s built settlement at %s" % (pname, intersection))
 
         return True
     
     
-    def buildRoad(self, pname, coordinate, start=False):
+    def buildRoad(self, pname, coordinate, start=False, verbose=True):
         player = self.players[pname]
         path = BoardState.graph.paths[(coordinate)]
         # Has Roads left
@@ -111,13 +112,14 @@ class BoardState:
         # Spend that money
         if not start:
             player.removeResources(D.supplyCost("Road"))
-        print ("Player %s built road at %s" % (pname, path))
+        if verbose:
+            print ("Player %s built road at %s" % (pname, path))
 
         self.computeLongestRoad(pname)
 
         return True
 
-    def buildCity(self, pname, coordinate):
+    def buildCity(self, pname, coordinate, verbose=True):
         player = self.players[pname]
         intersection = BoardState.graph.intersections[coordinate]
 
@@ -145,7 +147,8 @@ class BoardState:
         player.removeResources(D.supplyCost("City"))
         player.victory += 1
 
-        print ("Player %s built city at %s" % (pname, intersection))
+        if verbose:
+            print ("Player %s built city at %s" % (pname, intersection))
 
         return True
 
@@ -343,6 +346,41 @@ class BoardState:
                 self.players[pname].victory += 2
                 self.longestRoad = pname
 
+    def computeValidIntersectionPathPairs(self):
+        pairs = []
+        for i in range(len(self.graph.sortedIntersections)):
+            intersection = self.graph.sortedIntersections[i]
+            # If the intersection itself is occupied skip
+            if intersection in self.settlements or intersection in self.cities:
+                continue
+
+            for (path, neighbor) in intersection.adjacent:
+                # If the neighboring intersection is occupied skip
+                if neighbor in self.settlements or neighbor in self.cities:
+                    continue
+
+                # If the path is occupied skip
+                if path in self.roads:
+                    continue
+
+                pairs.append((i, self.graph.sortedPaths.index(path)))
+
+        return pairs
+
+    def playerResourceProbability(self, pname):
+        rv = [0] * 5
+        for intersection, p in self.settlements:
+            if p == pname:
+                for hex in intersection.hexes:
+                    rv[D.RESOURCE_PRODUCTION[hex.tile]] = rv[D.RESOURCE_PRODUCTION[hex.tile]] + D.ODDS[hex.number]
+
+        for intersection, p in self.cities:
+            if p == pname:
+                for hex in intersection.hexes:
+                    rv[D.RESOURCE_PRODUCTION[hex.tile]] = rv[D.RESOURCE_PRODUCTION[hex.tile]] + (2 * D.ODDS[hex.number])
+
+        # TODO: Harbors?
+        return rv
 
     def __str__(self):
         out = "\n".join([str(self.board[hex]) for hex in self.board]) + "\n"

@@ -13,6 +13,7 @@ SUPPLY_COSTS = { "Settlement" : {"Brick" : 1, "Lumber" : 1, "Wool" : 1, "Grain" 
 
 TILES = ["Desert"] + ["Fields"] * 4 + ["Pasture"] * 4 + ["Forest"] * 4 + ["Hills"] * 3 + ["Mountains"] * 3
 NUMBERS = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12]
+ODDS = {2: 1/36, 3: 2/36, 4: 3/36, 5: 4/36, 6: 5/36, 8: 5/36, 9: 4/36, 10: 3/36, 11: 2/36, 12: 1/36}
 
 HARBORS = { (0, -2, 0) : "Wild",   (0, -2, 1)  : "Wild", 
             (1, -2, 1) : "Grain",  (1, -2, 2)  : "Grain",  (2, -2, 0)  : "Grain",
