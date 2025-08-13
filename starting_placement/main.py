@@ -1,9 +1,10 @@
 import numpy as np
 import tensorflow as tf
+import random
 
 from BoardState import BoardState
 import Defines as D
-import random
+import visualization
 
 class TrainingEnvironment:
     def __init__(self, board, players):
@@ -16,9 +17,10 @@ class TrainingEnvironment:
         while len(self.turns) > 0:
             next = self.turns.pop(0)
             if (next == "Red"):
-                break
+                return False
 
             initialPlace(self.board.players[next], self.board)
+        return True
 
     def state(self):
         board = self.board
@@ -60,10 +62,8 @@ class TrainingEnvironment:
         self.board.buildSettle("Red", coordinate, start=True, verbose=False)
         road = self.board.graph.sortedPaths[path].hexCoords[0]
         self.board.buildRoad("Red", road, start=True, verbose=False)
-
-        self._simulatePlayers()
         
-        done = len(self.turns) == 0
+        done = self._simulatePlayers()
         reward = 0 if not done else self.reward()
 
         return self.state(), reward, done
@@ -186,12 +186,7 @@ def initialPlace(player, board):
     return
 
 if __name__ == "__main__":
-    players = ["Red", "Blue", "Yellow", "White"]
-    board = BoardState(players)
-
-    env = TrainingEnvironment(board, players)
-    model = PolicyNetwork(len(board.graph.sortedIntersections), len(board.graph.sortedPaths))
-    print ("lengths", len(board.graph.sortedIntersections), len(board.graph.sortedPaths))
+    model = PolicyNetwork(54, 72)
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
     for _ in range(1000):
@@ -209,7 +204,6 @@ if __name__ == "__main__":
                 state_tensor = tf.convert_to_tensor([state], dtype=tf.float32)
                 intersection_probs, path_probs = model(state_tensor)
 
-                # Mask and sample
                 valid_pairs = env.board.computeValidIntersectionPathPairs()
                 pair_indices, pair_probs = mask_and_sample(intersection_probs, path_probs, valid_pairs)
                 action_idx = np.random.choice(len(pair_indices), p=pair_probs)
@@ -224,3 +218,5 @@ if __name__ == "__main__":
 
         grads = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
+    
+    visualization.draw_board(env.board)

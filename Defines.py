@@ -28,6 +28,14 @@ HARBORS = { (0, -2, 0) : "Wild",   (0, -2, 1)  : "Wild",
 RESOURCE_PRODUCTION = {"Hills": "Brick", "Forest": "Lumber", "Mountains": "Ore", "Fields": "Grain", "Pasture": "Wool", "Desert" : None}
 
 
+RESOURCE_COLORS = {
+    "Grain": "#f7e58c",
+    "Lumber": "#228B22",
+    "Brick": "#b22222",
+    "Ore": "#a9a9a9",
+    "Wool": "#90ee90",
+    "Desert": "#f0e68c"
+}
 
 def supplyIndex(supply):
     return SUPPLY_TYPES.index(supply)
