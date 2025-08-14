@@ -12,15 +12,15 @@ from .TrainingEnvironment import TrainingEnvironment
 from .RandoBot import RandoBot
 
 if __name__ == "__main__":
-    model = PolicyNetwork(54, 72)
-    #model = tf.keras.models.load_model("training_model_1.keras")
+    #model = PolicyNetwork(54, 72)
+    model = tf.keras.models.load_model("fooling.keras")
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.01) 
     start_time = time.time()
 
     # 100000 took 61 minutes
     # 500000 took 2.3 hours
     iterations = 0
-    while (time.time() - start_time) < 15 * 60:
+    while (time.time() - start_time) < 30 * 60:
         players = ["Red", "Blue", "Yellow", "Green"]
         random.shuffle(players)
         env = TrainingEnvironment(BoardState(players), players, RandoBot())
