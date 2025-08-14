@@ -369,18 +369,44 @@ class BoardState:
 
     def playerResourceProbability(self, pname):
         rv = [0] * 5
-        for intersection, p in self.settlements:
+        for intersection, p in self.settlements.items():
             if p == pname:
-                for hex in intersection.hexes:
-                    rv[D.RESOURCE_PRODUCTION[hex.tile]] = rv[D.RESOURCE_PRODUCTION[hex.tile]] + D.ODDS[hex.number]
+                for hex in [self.board[h] for h in intersection.hexes]:
+                    if D.RESOURCE_PRODUCTION[hex.tile]:
+                        index = D.resourceIndex(D.RESOURCE_PRODUCTION[hex.tile])
+                        rv[index] = rv[index] + D.ODDS[hex.number]
 
-        for intersection, p in self.cities:
+        for intersection, p in self.cities.items():
             if p == pname:
-                for hex in intersection.hexes:
-                    rv[D.RESOURCE_PRODUCTION[hex.tile]] = rv[D.RESOURCE_PRODUCTION[hex.tile]] + (2 * D.ODDS[hex.number])
+                for hex in [self.board[h] for h in intersection.hexes]:
+                    if D.RESOURCE_PRODUCTION[hex.tile]:
+                        index = D.resourceIndex(D.RESOURCE_PRODUCTION[hex.tile])
+                        rv[index] = rv[index] + (2 * D.ODDS[hex.number])
 
         # TODO: Harbors?
         return rv
+
+    def roadConnectionDistance(self, pname):
+        # TODO - handle more than two roads
+        [start, finish] = [k for k, v in self.roads.items() if v == pname]
+        neighbors = [(0, r) for r in start.adjacent] # Adjacent to paths are two intersections
+        explored = set([start])
+        distance = -1
+        while neighbors:
+            (cost, neighbor) = neighbors.pop(0)
+            if finish in [r for (r, _) in neighbor.adjacent]: # Adjacent to intersections are 2-3 (path, intersection) pairs
+                distance = cost
+                break
+
+            explored.update([neighbor])
+            for (_, i) in neighbor.adjacent:
+                if not i in explored:
+                    neighbors.append((cost + 1, i))
+
+        if distance == -1:
+            raise Exception(f"Failed to find connection distance between {start} and {finish}")
+        
+        return distance
 
     def __str__(self):
         out = "\n".join([str(self.board[hex]) for hex in self.board]) + "\n"
