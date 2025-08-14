@@ -19,31 +19,32 @@ class BoardState:
         for pname in pnames:
             self.players[pname] = Player(pname)
 
-        # Make copies so we can pop from the lists in the following loop
-        tiles = D.TILES.copy()
-        numbers = D.NUMBERS.copy()
-
-        # Shuffle the lists
-        random.shuffle(tiles)
-        random.shuffle(numbers)
-
         # initialize the board
         self.board = {}
+
+        # Make copies so we can pop from the lists in the following loop
+        tiles = D.TILES.copy()
+        random.shuffle(tiles)
 
         # Build the hex grid for extent N = 2 giving each a random tile and number
         N = 2
         for q in range(-N, N + 1):
             for r in range(max(-N, -q - N), min(N, -q + N) + 1):
                 tile = tiles.pop()
-                number = 0
-                robber = False
-                if tile == "Desert":
-                    robber = True
-                else:
-                    number = numbers.pop()
+                self.board[(q, r)] = Hex(q, r, tile, tile == "Desert")
 
-                self.board[(q, r)] = Hex(q, r, tile, number, robber)
-        
+        # Place numbers in a spiral pattern
+        placements = D.NUMBER_PLACEMENTS[random.randint(0, 5)]
+        gridIndex, numberIndex = 0, 0
+        while numberIndex < len(D.NUMBERS):
+            coord = placements[gridIndex]
+            if self.board[coord].tile == "Desert":
+                gridIndex += 1
+                coord = placements[gridIndex]
+            self.board[coord].number = D.NUMBERS[numberIndex]
+            gridIndex += 1
+            numberIndex += 1
+
         # Set the development card deck
         self.developments = ["Road Building"] * 2 + ["Monopoly"] * 2 \
                             + ["Year of Plenty"] * 2 + ["Knight"] * 7 \
@@ -154,7 +155,7 @@ class BoardState:
         if verbose:
             print ("Player %s built road at %s" % (pname, path))
 
-        self.computeLongestRoad(pname)
+        self.computeLongestRoad(pname, verbose=verbose)
 
         return True
 
@@ -191,12 +192,13 @@ class BoardState:
 
         return True
 
-    def produce(self, pname, target, robber):
+    def produce(self, pname, target, robber, verbose=True):
         roll = random.randint(1, 6) + random.randint(1, 6)
-        print ("Rolled", roll)
+        if verbose:
+            print ("Rolled", roll)
 
         if roll == 7:
-            self.robber(pname, target, robber)
+            self.robber(pname, target, robber, verbose=verbose)
             return
 
         playerProduction = {}
@@ -214,11 +216,12 @@ class BoardState:
                     if not pname in playerProduction: playerProduction[pname] = {}
                     playerProduction[pname][resource] = playerProduction[pname].get(resource, 0) + 1
 
-        print ("Produced:", playerProduction)
+        if verbose:
+            print ("Produced:", playerProduction)
         for (pname, production) in playerProduction.items():
             self.players[pname].addResources(production)
 
-    def robber(self, pname, target, hex):
+    def robber(self, pname, target, hex, verbose=True):
         for h in self.board:
             self.board[h].robber = (h == hex)
 
@@ -237,11 +240,12 @@ class BoardState:
                 resource = random.choice(resources)
                 self.players[target].resources[D.resourceIndex(resource)] -= 1
                 self.players[pname].resources[D.resourceIndex(resource)] += 1
-                print ("Robber stole %s from %s" % (resource, target))
+                if verbose:
+                    print ("Robber stole %s from %s" % (resource, target))
+        if verbose:
+            print ("Robber is now blocking %s: %d - %s" % (hex, self.board[hex].number, self.board[hex].tile))
 
-        print ("Robber is now blocking %s: %d - %s" % (hex, self.board[hex].number, self.board[hex].tile))
-
-    def buyDevelopment(self, pname):
+    def buyDevelopment(self, pname, verbose=True):
         player = self.players[pname]
         
         if not self.developments: return False
@@ -251,17 +255,19 @@ class BoardState:
         player.developments.append(card)
 
         player.removeResources(D.supplyCost("Development"))
-        print("Player %s drew a '%s'" % (pname, card))
+        if verbose:
+            print("Player %s drew a '%s'" % (pname, card))
 
     # Affect the board state by using the card
-    def playDevelopment(self, pname, card, extras=[]):
+    def playDevelopment(self, pname, card, extras=[], verbose=True):
         player = self.players[pname]
 
         # Victory cards do nothing
         if card in D.VICTORY_CARDS:
             player.developments.remove(card)
             player.victory += 1
-            print("Player %s played victory card '%s'" % (pname, card))
+            if verbose:
+                print("Player %s played victory card '%s'" % (pname, card))
             return True
 
         # Knights move the Robber
@@ -269,12 +275,14 @@ class BoardState:
         if card == "Knight":
             player.developments.remove(card)
             player.military += 1
-            self.robber(pname, extras[0], extras[1])
-            print("Player %s played a knight moving the robber to block %s at %s" % (pname, extras[0], extras[1]))
+            self.robber(pname, extras[0], extras[1], verbose=verbose)
+            if verbose:
+                print("Player %s played a knight moving the robber to block %s at %s" % (pname, extras[0], extras[1]))
             if (self.largestArmy is None and player.military >= 3) \
                 or (self.largestArmy is not None and player.military > self.players[self.largestArmy].military):
                 if self.largestArmy: self.players[self.largestArmy].victory -= 2
-                print ("Player %s now has the largest army with %d" % (pname, player.military))
+                if verbose:
+                    print ("Player %s now has the largest army with %d" % (pname, player.military))
                 self.largestArmy = pname
                 player.victory += 2
             return True
@@ -295,7 +303,8 @@ class BoardState:
 
             # If we made it this far without blocking, go ahead and set the board
             player.developments.remove(card)
-            print("Player %s played 'Road Building' for roads at %s and %s" % (pname, extras[0], extras[1]))
+            if verbose:
+                print("Player %s played 'Road Building' for roads at %s and %s" % (pname, extras[0], extras[1]))
 
             self.roads.update(roads)
 
@@ -315,7 +324,8 @@ class BoardState:
                     self.players[p].resources[index] = 0
 
             player.resources[index] += count
-            print ("Player %s stole %d %s resources from: %s" % (pname, count, type, ", ".join(stole)))
+            if verbose:
+                print ("Player %s stole %d %s resources from: %s" % (pname, count, type, ", ".join(stole)))
             return True
 
         if card == "Year of Plenty":
@@ -325,12 +335,13 @@ class BoardState:
 
             player.developments.remove(card)
             player.addResources(resources)
-            print ("Player %s played 'Year of Plenty' for %s" % (pname, extras))
+            if verbose:
+                print ("Player %s played 'Year of Plenty' for %s" % (pname, extras))
             return True
         
         raise Exception("Attempted to play DevelopmentCard with unknown type: " + card)
 
-    def tradeMaritime(self, pname, outgoing, incoming):
+    def tradeMaritime(self, pname, outgoing, incoming, verbose=True):
         player = self.players[pname]
         count = 4
         if player.harbors[D.harborIndex(outgoing)] == True:
@@ -341,12 +352,13 @@ class BoardState:
         if not player.canAffordResources({outgoing : count}):
             return False
 
-        print ("Player %s trading %d of %s for %s" % (pname, count, outgoing, incoming))
+        if verbose:
+            print ("Player %s trading %d of %s for %s" % (pname, count, outgoing, incoming))
         player.removeResources({outgoing : count})
         player.addResources({incoming : 1})
         return True
 
-    def computeLongestRoad(self, pname):
+    def computeLongestRoad(self, pname, verbose=True):
         playerRoads = {}
         for (path, owner) in self.roads.items():
             if owner not in playerRoads: playerRoads[owner] = []
@@ -375,13 +387,15 @@ class BoardState:
         
         if self.longestRoad:
             if maxLengths[pname] > maxLengths[self.longestRoad]:
-                print ("Player", pname, "has stolen the longest road from",  self.longestRoad, "with a length of", maxLengths[pname])
+                if verbose:
+                    print ("Player", pname, "has stolen the longest road from",  self.longestRoad, "with a length of", maxLengths[pname])
                 self.players[pname].victory += 2
                 self.players[self.longestRoad].victory -= 2
                 self.longestRoad = pname
         else:
             if maxLengths[pname] >= 5:
-                print ("Player", pname, "has the longest road with a length of", maxLengths[pname])
+                if verbose:
+                    print ("Player", pname, "has the longest road with a length of", maxLengths[pname])
                 self.players[pname].victory += 2
                 self.longestRoad = pname
 
@@ -390,16 +404,12 @@ class BoardState:
         for i in range(len(self.graph.sortedIntersections)):
             intersection = self.graph.sortedIntersections[i]
             # If the intersection itself is occupied skip
-            if intersection in self.settlements or intersection in self.cities:
+            if intersection.blockedSettle(self.settlements | self.cities):
                 continue
 
-            for (path, neighbor) in intersection.adjacent:
+            for (path, _) in intersection.adjacent:
                 # If the neighboring intersection is occupied skip
-                if neighbor in self.settlements or neighbor in self.cities:
-                    continue
-
-                # If the path is occupied skip
-                if path in self.roads:
+                if path.blockedRoad(self.roads):
                     continue
 
                 pairs.append((i, self.graph.sortedPaths.index(path)))
@@ -446,6 +456,7 @@ class BoardState:
             raise Exception(f"Failed to find connection distance between {start} and {finish}")
         
         return distance
+
 
     def __str__(self):
         out = "\n".join([str(self.board[hex]) for hex in self.board]) + "\n"

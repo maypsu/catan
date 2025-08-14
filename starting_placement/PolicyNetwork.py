@@ -46,11 +46,15 @@ class PolicyNetwork(tf.keras.Model):
         path_probs = self.path_head(x)
         return intersection_probs, path_probs
     
-    def argmax(self, state, valid_pairs):
+    def argmax(self, state, valid_pairs, verbose=False):
         state_tensor = tf.convert_to_tensor([state], dtype=tf.float32)
         intersection_probs, path_probs = self(state_tensor)
 
         pair_indices, pair_probs = mask_and_sample(intersection_probs, path_probs, valid_pairs)
+        if verbose:
+            print ("ARGMAX: ")
+            for i in range(len(pair_indices)):
+                print(f"\t{pair_indices[i]} : {pair_probs[i]}")
 
         return pair_indices[np.argmax(pair_probs)]
 

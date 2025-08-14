@@ -4,12 +4,11 @@ import time
 from BoardState import BoardState
 import Defines as D
 import IntersectionGraph as IG
-import starting_placement.dumbUtils as dumbUtils
+import starting_placement.RandoBot as RandoBot
 import starting_placement.ModelBot as ModelBot
 import visualization
 
-def playGame(bots):
-    start_time = time.time()
+def playGame(bots, verbose=True):
 
     players = ["Red", "Blue", "Yellow", "White"]
     random.shuffle(players)
@@ -17,18 +16,18 @@ def playGame(bots):
 
     for player in board.players:
         settlement, road = bots[player].initialPlace(board.players[player], board)
-        if not board.buildSettle(player, settlement, start=True, verbose=False): 
+        if not board.buildSettle(player, settlement, start=True, verbose=verbose): 
             raise Exception(f"Could not place SETTLEMENT at determined coordinates {settlement}")
 
-        if not board.buildRoad(player, road, start=True, verbose=False): 
+        if not board.buildRoad(player, road, start=True, verbose=verbose): 
             raise Exception(f"Could not place ROAD at determined coordinates {road}")
 
     for player in reversed(board.players):
         settlement, road = bots[player].initialPlace(board.players[player], board)
-        if not board.buildSettle(player, settlement, start=True, verbose=False):
+        if not board.buildSettle(player, settlement, start=True, verbose=verbose):
             raise Exception(f"Could not place SETTLEMENT at determined coordinates {settlement}")
 
-        if not board.buildRoad(player, road, start=True, verbose=False): 
+        if not board.buildRoad(player, road, start=True, verbose=verbose): 
             raise Exception(f"Could not place ROAD at determined coordinates {road}")
 
         resources = {}
@@ -37,46 +36,48 @@ def playGame(bots):
         if resource: resources[resource] = resources.get(resource, 0) + 1
 
         board.players[player].addResources(resources)
-        print ("Player %s starting with resources: %s" % (board.players[player].name, resources))
+        if verbose:
+            print ("Player %s starting with resources: %s" % (board.players[player].name, resources))
 
     for turn in range(0, 200):
         for pname in board.players:
             player = board.players[pname]
-            print ("Turn %d Player %s" % (turn, player.name))
-            if (player.developments):
-                card = random.choice(player.developments)
-                ds = 0
-                for _ in range(0, 100):
-                    ds += 1
-                    if board.playDevelopment(player.name, card, dumbUtils.randomExtra(card, player.name, board)):
-                        break
+            bot = bots[pname]
+
+            if verbose:
+                print ("Turn %d Player %s" % (turn, player.name))
+            # Play any Development Cards
+            bot.playCards(player, board)
 
             # Produce
-            # Pick a random spot for the robber to move
-            robber = dumbUtils.randomRobber(pname, board)
-            board.produce(pname, robber[0], robber[1])
+            # Pick a random spot for the robber to move if a 7 is rolled
+            robber_opponent, robber_hex = bot.pickRobber(pname, board)
+            board.produce(pname, robber_opponent, robber_hex, verbose=verbose)
 
             # Build
-            if not dumbUtils.attemptBuild(player, board):
+            if not bot.attemptBuild(player, board, verbose=verbose):
                 # Trade
                 choices = [x for x in D.RESOURCE_TYPES if player.canTrade(x)]
                 if choices:
                     outgoing = random.choice(choices)
                     incoming = random.choice([x for x in D.RESOURCE_TYPES if x is not outgoing])
-                    board.tradeMaritime(player.name, outgoing, incoming)
+                    board.tradeMaritime(player.name, outgoing, incoming, verbose=verbose)
 
-            print (board.strPlayers())
+            if verbose:
+                print (board.strPlayers())
             if player.victory == 10:
-                print ("VICTORY for %s" % player.name)
-                print ("Elapsed Time:", str(time.time() - start_time))
+                if verbose:
+                    print ("VICTORY for %s" % player.name)
                 return player.name
         
     return "none"
 
-bots = { "Red" : ModelBot.ModelBot("training_model_1.keras"), "Blue" : dumbUtils.DumbBot(), "Yellow" : dumbUtils.DumbBot(), "White" : dumbUtils.DumbBot() }
+bots = { "Red" : ModelBot.ModelBot("nightly_model_0.keras"), "Blue" : RandoBot.RandoBot(), "Yellow" : RandoBot.RandoBot(), "White" : RandoBot.RandoBot() }
 
+start_time = time.time()
 winners = {}
-for _ in range(1000):
-    winner = playGame(bots)
+for _ in range(10000):
+    winner = playGame(bots, verbose=False)
     winners[winner] = winners.get(winner, 0) + 1
+print ("Elapsed Time:", str(time.time() - start_time))
 print (winners)

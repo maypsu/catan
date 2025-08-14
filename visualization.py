@@ -43,11 +43,11 @@ def draw_board(board, reward):
     resource_types = []
     dice_numbers = []
     N = 2
-    for q in range(-N, N + 1):
-        for r in range(max(-N, -q - N), min(N, -q + N) + 1):
-            hex = board.board[(q, r)]
-            resource_types.append(D.RESOURCE_PRODUCTION[hex.tile])
-            dice_numbers.append(hex.number)
+    for i in range(len(HEX_COORDS)):
+        coords = HEX_COORDS[i]
+        hex = board.board[coords]
+        resource_types.append(D.RESOURCE_PRODUCTION[hex.tile])
+        dice_numbers.append(hex.number)
 
     _, ax = plt.subplots(figsize=(8, 7))
     ax.set_aspect('equal')
@@ -80,7 +80,7 @@ def draw_board(board, reward):
         b = np.radians(300) + ((edge + 1) % 6) * np.radians(60)
         center = HEX_LAYOUT[HEX_COORDS.index((q, r))]
         ax.plot([center[0] + size * np.sin(a), center[0] + size * np.sin(b)], [center[1] + size * np.cos(a), center[1] + size * np.cos(b)], color=pname, linewidth=4)
-    
+
     plt.title("Settlers of Catan - " + ", ".join(board.players) + " Reward: " + str(reward))
     plt.tight_layout()
     plt.show()

@@ -9,18 +9,21 @@ import visualization
 
 from .PolicyNetwork import PolicyNetwork, mask_and_sample
 from .TrainingEnvironment import TrainingEnvironment
-from .dumbUtils import DumbBot
+from .RandoBot import RandoBot
 
 if __name__ == "__main__":
-    #model = PolicyNetwork(54, 72)
-    model = tf.keras.models.load_model("training_model_1.keras")
+    model = PolicyNetwork(54, 72)
+    #model = tf.keras.models.load_model("training_model_1.keras")
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.01) 
     start_time = time.time()
 
-    for _ in range(100000):
+    # 100000 took 61 minutes
+    # 500000 took 2.3 hours
+    iterations = 0
+    while (time.time() - start_time) < 1.5 * 60 * 60:
         players = ["Red", "Blue", "Yellow", "White"]
         random.shuffle(players)
-        env = TrainingEnvironment(BoardState(players), players, DumbBot())
+        env = TrainingEnvironment(BoardState(players), players, RandoBot())
 
         with tf.GradientTape() as tape:
             logp = 0
@@ -46,7 +49,8 @@ if __name__ == "__main__":
 
         grads = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
+        iterations += 1
 
-    model.save("training_model_2.keras")
-    print ("Elapsed Time: ", str(time.time() - start_time), flush=True)
+    model.save("training_model_3.keras")
+    print ("Elapsed Time: ", str(time.time() - start_time), "Iterations:", iterations, flush=True)
     visualization.draw_board(env.board, env.reward("Red"))

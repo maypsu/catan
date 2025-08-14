@@ -1,11 +1,11 @@
 import Defines as D
 class Hex:
-    def __init__(self, q, r, tile, number, robber):
+    def __init__(self, q, r, tile, robber):
         self.q = q
         self.r = r
 
         self.tile = tile
-        self.number = number
+        self.number = 0
         self.robber = robber
 
     def coord(self):

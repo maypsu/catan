@@ -2,9 +2,12 @@ import numpy as np
 import tensorflow as tf
 
 from .PolicyNetwork import PolicyNetwork
+from .RandoBot import RandoBot
 
-class ModelBot:
+class ModelBot(RandoBot):
     def __init__(self, filename):
+        super().__init__()
+
         self.model = tf.keras.models.load_model(filename)
 
     def initialPlace(self, player, board):

@@ -47,18 +47,21 @@ class Intersection:
         return False
 
     def blockedSettle(self, occupied):
+        # Can only build if no one has built here yet
+        if self in occupied:
+            return True
+ 
         # Can't build if their are settlements on the neighboring intersections
         for inter in [x for (_, x) in self.adjacent]:
-            if inter in occupied: return False
+            if inter in occupied: return True
 
-        # Can only build if no one has built here yet
-        return self in occupied
+        return False
     
     def blockedCity(self, pname, settlements):
         return self not in settlements or settlements[self] is not pname
 
     def __str__(self):
-        return str(self.hexCoords[0])
+        return str(self.hexCoords) #[0])
 
 class Path:
     def __init__(self, coordinate):
@@ -79,7 +82,7 @@ class Path:
         return False
     
     def __str__(self):
-        return str(self.hexCoords[0])
+        return str(self.hexCoords) #[0])
 
 def expandIntersection(intersection):
     (q, r, x) = intersection
