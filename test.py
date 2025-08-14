@@ -1,125 +1,45 @@
+import random
+import time
+
 from BoardState import BoardState
 import Defines as D
 import IntersectionGraph as IG
-import random
+import starting_placement.dumbUtils as dumbUtils
+import starting_placement.ModelBot as ModelBot
+import visualization
 
-pnames = ["Red", "Blue", "Yellow", "White"]
-board = BoardState(pnames)
+def playGame(bots):
+    start_time = time.time()
 
-def pickRandom():
-    while True:
-        q = random.randint(-2, 2)
-        r = random.randint(-2, 2)
-        x = random.randint(0, 5)
+    players = ["Red", "Blue", "Yellow", "White"]
+    random.shuffle(players)
+    board = BoardState(players)
 
-        s = -q - r
-        if s < -2 or s > 2:
-            continue
+    for player in board.players:
+        settlement, road = bots[player].initialPlace(board.players[player], board)
+        if not board.buildSettle(player, settlement, start=True, verbose=False): 
+            raise Exception(f"Could not place SETTLEMENT at determined coordinates {settlement}")
 
-        return (q, r, x)
+        if not board.buildRoad(player, road, start=True, verbose=False): 
+            raise Exception(f"Could not place ROAD at determined coordinates {road}")
 
-def initialPlace(player):
-    settles = 0
-    q = 0
-    r = 0
-    x = 0
-    while True:
-        settles += 1
-        coordinate = pickRandom()
-        if board.buildSettle(player.name, coordinate, True): 
-            print ("Settlement: %s %s" % (player.name, coordinate), flush=True)
-            break
+    for player in reversed(board.players):
+        settlement, road = bots[player].initialPlace(board.players[player], board)
+        if not board.buildSettle(player, settlement, start=True, verbose=False):
+            raise Exception(f"Could not place SETTLEMENT at determined coordinates {settlement}")
 
-    roads = 0
-    intersection = BoardState.graph.intersections[coordinate]
-    paths = [x for (x, _) in intersection.adjacent]
-    random.shuffle(paths)
-    path = paths.pop()
-    while path:    
-        if path.canConnect(player.name, board.roads, board.settlements, True) and not path.blockedRoad(board.roads): break
-        path = paths.pop()
-    
-    if not path or not board.buildRoad(player.name, path.hexCoords[0], True): 
-        raise Exception("Could not place path because there were no valid locations")
-    
-    resources = {}
-    for hex in BoardState.graph.intersections[coordinate].hexes:
-        resource = board.board[hex].produces(board.board[hex].number)
+        if not board.buildRoad(player, road, start=True, verbose=False): 
+            raise Exception(f"Could not place ROAD at determined coordinates {road}")
+
+        resources = {}
+        for hex in BoardState.graph.intersections[settlement].hexes:
+            resource = board.board[hex].produces(board.board[hex].number)
         if resource: resources[resource] = resources.get(resource, 0) + 1
 
-    print ("Player %s picked in %d settle and %d road attempts" % (player.name, settles, roads))
-    return resources
+        board.players[player].addResources(resources)
+        print ("Player %s starting with resources: %s" % (board.players[player].name, resources))
 
-statistics = [0, 0, 0, 0]
-def attemptBuild(player):
-    pname = player.name
-    if (player.canAffordResources(D.supplyCost("City")) and player.supply[2] > 0 and player.supply[1] < 5):
-        for _ in range(0, 100):
-            if board.buildCity(pname, pickRandom()):
-                statistics[2] += 1
-                return True
-
-    if (player.canAffordResources(D.supplyCost("Settlement")) and player.supply[1] > 0):
-        for _ in range(0, 100):
-            if board.buildSettle(pname, pickRandom()):
-                statistics[1] += 1
-                return True
-
-    if (player.canAffordResources(D.supplyCost("Road")) and player.supply[0] > 0):
-        for _ in range(0, 100):
-            if board.buildRoad(pname, pickRandom()):
-                statistics[0] += 1
-                return True
-
-    if (player.canAffordResources(D.supplyCost("Development")) and board.developments):
-        board.buyDevelopment(pname)
-        statistics[3] += 1
-        return True
-    
-    return False
-    
-def randomRobber(pname):
-    while True:
-        (q, r, _) = pickRandom()
-        robber = (q, r)
-
-        producers = board.settlements | board.cities
-        for x in range(0, 6):
-            intersection = BoardState.graph.intersections[(q, r, x)]
-            if intersection in producers and producers[intersection] is not pname: 
-                return [producers[intersection], robber]
-
-def randomRoad(pname, start):
-    while True:
-        coordinate = pickRandom()
-        path = BoardState.graph.paths[coordinate]
-        if path.canConnect(pname, board.roads, board.settlements, start):
-            return coordinate
-
-def randomExtra(card, pname):
-    if card in D.VICTORY_CARDS:
-        return []
-    if card == "Knight":
-        return randomRobber(pname)
-    if card == "Road Building":
-        return [randomRoad(pname, False), randomRoad(pname, False)]
-    if card == "Monopoly":
-        return random.choices(D.RESOURCE_TYPES, k=1)
-    if card == "Year of Plenty":
-        return random.choices(D.RESOURCE_TYPES, k=2)
-
-for player in board.players:
-    initialPlace(board.players[player])
-
-for player in reversed(board.players):
-    resources = initialPlace(board.players[player])
-    board.players[player].addResources(resources)
-    print ("Player %s starting with resources: %s" % (board.players[player].name, resources))
-
-print (str(board))
-
-def _main():
-    for turn in range(0, 100):
+    for turn in range(0, 200):
         for pname in board.players:
             player = board.players[pname]
             print ("Turn %d Player %s" % (turn, player.name))
@@ -128,16 +48,16 @@ def _main():
                 ds = 0
                 for _ in range(0, 100):
                     ds += 1
-                    if board.playDevelopment(player.name, card, randomExtra(card, player.name)):
+                    if board.playDevelopment(player.name, card, dumbUtils.randomExtra(card, player.name, board)):
                         break
 
             # Produce
             # Pick a random spot for the robber to move
-            robber = randomRobber(pname)
+            robber = dumbUtils.randomRobber(pname, board)
             board.produce(pname, robber[0], robber[1])
 
             # Build
-            if not attemptBuild(player):
+            if not dumbUtils.attemptBuild(player, board):
                 # Trade
                 choices = [x for x in D.RESOURCE_TYPES if player.canTrade(x)]
                 if choices:
@@ -148,12 +68,15 @@ def _main():
             print (board.strPlayers())
             if player.victory == 10:
                 print ("VICTORY for %s" % player.name)
-                return
+                print ("Elapsed Time:", str(time.time() - start_time))
+                return player.name
+        
+    return "none"
 
-# try:
-_main()
-# except Exception as ex:
-#     print (ex)
+bots = { "Red" : ModelBot.ModelBot("training_model_1.keras"), "Blue" : dumbUtils.DumbBot(), "Yellow" : dumbUtils.DumbBot(), "White" : dumbUtils.DumbBot() }
 
-print (str(board))
-print (str(statistics))
+winners = {}
+for _ in range(1000):
+    winner = playGame(bots)
+    winners[winner] = winners.get(winner, 0) + 1
+print (winners)

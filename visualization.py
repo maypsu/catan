@@ -39,7 +39,7 @@ def draw_hex(ax, center, size=1, color='white', label=None, text_color='black'):
     if label:
         ax.text(x, y, label, ha='center', va='center', fontsize=10, color=text_color)
 
-def draw_board(board):
+def draw_board(board, reward):
     resource_types = []
     dice_numbers = []
     N = 2
@@ -81,7 +81,7 @@ def draw_board(board):
         center = HEX_LAYOUT[HEX_COORDS.index((q, r))]
         ax.plot([center[0] + size * np.sin(a), center[0] + size * np.sin(b)], [center[1] + size * np.cos(a), center[1] + size * np.cos(b)], color=pname, linewidth=4)
     
-    plt.title("Settlers of Catan - " + ", ".join(board.players))
+    plt.title("Settlers of Catan - " + ", ".join(board.players) + " Reward: " + str(reward))
     plt.tight_layout()
     plt.show()
 
@@ -92,4 +92,4 @@ if __name__ == "__main__":
     board.buildSettle("Red", (-2, 1, 3), start=True)
     board.buildRoad("Red", (-2, 1, 3), start=True)
 
-    draw_board(board)
+    draw_board(board, 0.0)

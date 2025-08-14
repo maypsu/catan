@@ -4,9 +4,11 @@ import Defines as D
 from .dumbUtils import initialPlace
 
 class TrainingEnvironment:
-    def __init__(self, board, players):
+    def __init__(self, board, players, placer):
         self.board = board
         self.players = players
+        self.placer = placer
+
         self.turns = players + list(reversed(players))
         self._simulatePlayers()
 
@@ -16,42 +18,17 @@ class TrainingEnvironment:
             if (next == "Red"):
                 return False
 
-            initialPlace(self.board.players[next], self.board)
+            settlement, road = self.placer.initialPlace(self.board.players[next], self.board)
+            if not self.board.buildSettle(next, settlement, True, verbose=False): 
+                raise Exception(f"Could not place SETTLEMENT at determined coordinates {settlement}")
+    
+            if not self.board.buildRoad(next, road, True, verbose=False): 
+                raise Exception(f"Could not place ROAD at determined coordinates {road}")
+            
         return True
 
     def state(self):
-        board = self.board
-        state = []
-        players = [0] * len(self.players)
-        players[self.players.index("Red")] = 1
-
-        sortedHexes = sorted(board.board)
-        for hex in sortedHexes:
-            # tile type
-            tile = [0] * 6
-            tile[D.tileIndex(board.board[hex].tile)] = 1
-            # tile number
-            number = board.board[hex].number / 12
-            state.extend(tile + [number])
-
-        for intersection in board.graph.sortedIntersections:
-            settled = [0] * len(self.players)
-            if intersection in board.settlements:
-                pname = board.settlements[intersection]
-                settled[self.players.index(pname)] = 1
-            elif intersection in board.cities:
-                pname = board.cities[intersection]
-                settled[self.players.index(pname)] = 1
-            state.extend(settled)
-
-        for path in board.graph.sortedPaths:
-            settled = [0] * len(self.players)
-            if path in board.roads:
-                pname = board.roads[path]
-                settled[self.players.index(pname)] = 1
-            state.extend(settled)
-
-        return np.array(state, dtype=np.float32)
+        return self.board.state()
 
     def step(self, action):
         intersection, path = action

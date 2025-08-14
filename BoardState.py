@@ -1,4 +1,5 @@
 from operator import truediv
+import numpy as np
 import random
 from Hex import Hex
 from Player import Player
@@ -11,6 +12,8 @@ class BoardState:
     graph = IG.Graph()
 
     def __init__(self, pnames):
+        self.play_order = pnames.copy()
+
         # Save off the players
         self.players = {}
         for pname in pnames:
@@ -53,6 +56,42 @@ class BoardState:
 
         self.largestArmy = None
         self.longestRoad = None
+
+    def state(self):
+        board = self
+        state = []
+        players = [0] * len(self.play_order)
+        players[self.play_order.index("Red")] = 1
+
+        N = 2
+        for q in range(-N, N + 1):
+            for r in range(max(-N, -q - N), min(N, -q + N) + 1):
+                hex = board.board[(q, r)]
+                # tile type
+                tile = [0] * 6
+                tile[D.tileIndex(hex.tile)] = 1
+                # tile number
+                number = hex.number / 12
+                state.extend(tile + [number])
+
+        for intersection in board.graph.sortedIntersections:
+            settled = [0] * len(self.play_order)
+            if intersection in board.settlements:
+                pname = board.settlements[intersection]
+                settled[self.play_order.index(pname)] = 1
+            elif intersection in board.cities:
+                pname = board.cities[intersection]
+                settled[self.play_order.index(pname)] = 1
+            state.extend(settled)
+
+        for path in board.graph.sortedPaths:
+            settled = [0] * len(self.play_order)
+            if path in board.roads:
+                pname = board.roads[path]
+                settled[self.play_order.index(pname)] = 1
+            state.extend(settled)
+
+        return np.array(state, dtype=np.float32)
 
 
     def buildSettle(self, pname, coordinate, start=False, verbose=True):
