@@ -2,7 +2,7 @@ import random
 
 import Defines as D
 
-class DumbBot:
+class BetterBot:
     def __init__(self):
         self.statistics = [0, 0, 0, 0]
 

@@ -2,7 +2,7 @@ import random
 
 import Defines as D
 
-class DumbBot:
+class RandoBot:
     def __init__(self):
         self.statistics = [0, 0, 0, 0]
 
@@ -31,7 +31,7 @@ class DumbBot:
             ds = 0
             for _ in range(0, 100):
                 ds += 1
-                if board.playDevelopment(player.name, card, self.bot.randomExtra(card, player.name, board), verbose=verbose):
+                if board.playDevelopment(player.name, card, self.randomExtra(card, player.name, board), verbose=verbose):
                     break
 
 

@@ -86,7 +86,7 @@ def draw_board(board, reward):
     plt.show()
 
 if __name__ == "__main__":
-    players = ["Red", "Blue", "Yellow", "White"]
+    players = ["Red", "Blue", "Yellow", "Green"]
     board = BoardState(players)
 
     board.buildSettle("Red", (-2, 1, 3), start=True)

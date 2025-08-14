@@ -49,7 +49,7 @@ def score(board, intersection, verbose=False):
     
     return score
 
-players = ["Red", "Blue", "Yellow", "White"]
+players = ["Red", "Blue", "Yellow", "Green"]
 random.shuffle(players)
 board = BoardState(players)
 

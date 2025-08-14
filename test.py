@@ -10,7 +10,7 @@ import visualization
 
 def playGame(bots, verbose=True):
 
-    players = ["Red", "Blue", "Yellow", "White"]
+    players = ["Red", "Blue", "Yellow", "Green"]
     random.shuffle(players)
     board = BoardState(players)
 
@@ -47,7 +47,7 @@ def playGame(bots, verbose=True):
             if verbose:
                 print ("Turn %d Player %s" % (turn, player.name))
             # Play any Development Cards
-            bot.playCards(player, board)
+            bot.playCards(player, board, verbose=verbose)
 
             # Produce
             # Pick a random spot for the robber to move if a 7 is rolled
@@ -72,7 +72,7 @@ def playGame(bots, verbose=True):
         
     return "none"
 
-bots = { "Red" : ModelBot.ModelBot("nightly_model_0.keras"), "Blue" : RandoBot.RandoBot(), "Yellow" : RandoBot.RandoBot(), "White" : RandoBot.RandoBot() }
+bots = { "Red" : ModelBot.ModelBot("fooling.keras"), "Blue" : RandoBot.RandoBot(), "Yellow" : RandoBot.RandoBot(), "Green" : RandoBot.RandoBot() }
 
 start_time = time.time()
 winners = {}

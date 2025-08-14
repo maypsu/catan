@@ -9,7 +9,7 @@ RESOURCE_OFFSET = 20 # 2 Specified resources (2 values)
 INTERSECTION_TARGET_OFFSET = 22 # 1 Specified intersection (3 values)
 ROBBER_TARGET_OFFSET = 25 # 1 target of the robber (3 values)
 
-_players = ["Red", "Blue", "Yellow", "White"]
+_players = ["Red", "Blue", "Yellow", "Green"]
 _board = BoardState(_players)
 
 def act(pname, input):

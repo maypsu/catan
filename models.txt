@@ -1,5 +1,0 @@
-training_model_0 : 10000 iterations, new model, original score
-training_model_1 : 10000 iterations, training_model_0, original score
-training_model_2 : 100000 iterations, training_model_1, original score
-nightly_model_0  : 500000 iterations, newe model, original score
-training_model_3 : 10000 iterations, new model, no RCD

@@ -24,7 +24,7 @@ class BoardState:
 
         # Make copies so we can pop from the lists in the following loop
         tiles = D.TILES.copy()
-        random.shuffle(tiles)
+        #random.shuffle(tiles)
 
         # Build the hex grid for extent N = 2 giving each a random tile and number
         N = 2
@@ -34,7 +34,7 @@ class BoardState:
                 self.board[(q, r)] = Hex(q, r, tile, tile == "Desert")
 
         # Place numbers in a spiral pattern
-        placements = D.NUMBER_PLACEMENTS[random.randint(0, 5)]
+        placements = D.NUMBER_PLACEMENTS[0] #random.randint(0, 5)]
         gridIndex, numberIndex = 0, 0
         while numberIndex < len(D.NUMBERS):
             coord = placements[gridIndex]
@@ -60,10 +60,14 @@ class BoardState:
 
     def state(self):
         board = self
-        state = []
-        players = [0] * len(self.play_order)
-        players[self.play_order.index("Red")] = 1
 
+        board_state = []
+        # Active Player is always us!
+        players_state = [0] * len(self.play_order)
+        players_state[self.play_order.index("Red")] = 1
+        board_state.extend(players_state)
+
+        # Add the hex information (6 tile types, 11 possible numbers)
         N = 2
         for q in range(-N, N + 1):
             for r in range(max(-N, -q - N), min(N, -q + N) + 1):
@@ -72,9 +76,14 @@ class BoardState:
                 tile = [0] * 6
                 tile[D.tileIndex(hex.tile)] = 1
                 # tile number
-                number = hex.number / 12
-                state.extend(tile + [number])
+                number = [0] * 11
+                if hex.number == 0: # putting the 0 at 7 cause I'm lazy
+                    number[5] = 1
+                else:
+                    number[hex.number - 2] = 1
+                board_state.extend(tile + number)
 
+        intersection_state = []
         for intersection in board.graph.sortedIntersections:
             settled = [0] * len(self.play_order)
             if intersection in board.settlements:
@@ -83,16 +92,17 @@ class BoardState:
             elif intersection in board.cities:
                 pname = board.cities[intersection]
                 settled[self.play_order.index(pname)] = 1
-            state.extend(settled)
+            intersection_state.extend(settled)
 
+        path_state = []
         for path in board.graph.sortedPaths:
             settled = [0] * len(self.play_order)
             if path in board.roads:
                 pname = board.roads[path]
                 settled[self.play_order.index(pname)] = 1
-            state.extend(settled)
+            path_state.extend(settled)
 
-        return np.array(state, dtype=np.float32)
+        return board_state, intersection_state, path_state
 
 
     def buildSettle(self, pname, coordinate, start=False, verbose=True):

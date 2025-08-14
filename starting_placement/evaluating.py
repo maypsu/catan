@@ -10,12 +10,12 @@ from .TrainingEnvironment import TrainingEnvironment
 from .RandoBot import RandoBot
 
 if __name__ == "__main__":
-    model = tf.keras.models.load_model("nightly_model_0.keras")
+    model = tf.keras.models.load_model("fooling.keras")
 
     rewards = []
     for _ in range(1):
         # print ("=========================")
-        players = ["Red", "Blue", "Yellow", "White"]
+        players = ["Red", "Blue", "Yellow", "Green"]
         random.shuffle(players)
         env = TrainingEnvironment(BoardState(players), players, RandoBot())
 

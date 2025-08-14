@@ -7,7 +7,7 @@ from BoardState import BoardState
 import Defines as D
 import visualization
 
-from .PolicyNetwork import PolicyNetwork, mask_and_sample
+from .PolicyNetwork import PolicyNetwork, mask_and_sample, expand_dims
 from .TrainingEnvironment import TrainingEnvironment
 from .RandoBot import RandoBot
 
@@ -20,8 +20,8 @@ if __name__ == "__main__":
     # 100000 took 61 minutes
     # 500000 took 2.3 hours
     iterations = 0
-    while (time.time() - start_time) < 1.5 * 60 * 60:
-        players = ["Red", "Blue", "Yellow", "White"]
+    while (time.time() - start_time) < 15 * 60:
+        players = ["Red", "Blue", "Yellow", "Green"]
         random.shuffle(players)
         env = TrainingEnvironment(BoardState(players), players, RandoBot())
 
@@ -32,8 +32,7 @@ if __name__ == "__main__":
             actions = []
             done = False
             while not done:
-                state_tensor = tf.convert_to_tensor([state], dtype=tf.float32)
-                intersection_probs, path_probs = model(state_tensor)
+                intersection_probs, path_probs = model(expand_dims(state))
 
                 valid_pairs = env.board.computeValidIntersectionPathPairs()
                 pair_indices, pair_probs = mask_and_sample(intersection_probs, path_probs, valid_pairs)
@@ -51,6 +50,6 @@ if __name__ == "__main__":
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
         iterations += 1
 
-    model.save("training_model_3.keras")
+    model.save("fooling.keras")
     print ("Elapsed Time: ", str(time.time() - start_time), "Iterations:", iterations, flush=True)
     visualization.draw_board(env.board, env.reward("Red"))
