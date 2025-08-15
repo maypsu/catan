@@ -24,7 +24,7 @@ class BoardState:
 
         # Make copies so we can pop from the lists in the following loop
         tiles = D.TILES.copy()
-        #random.shuffle(tiles)
+        random.shuffle(tiles)
 
         # Build the hex grid for extent N = 2 giving each a random tile and number
         N = 2
@@ -34,7 +34,7 @@ class BoardState:
                 self.board[(q, r)] = Hex(q, r, tile, tile == "Desert")
 
         # Place numbers in a spiral pattern
-        placements = D.NUMBER_PLACEMENTS[0] #random.randint(0, 5)]
+        placements = D.NUMBER_PLACEMENTS[random.randint(0, 5)]
         gridIndex, numberIndex = 0, 0
         while numberIndex < len(D.NUMBERS):
             coord = placements[gridIndex]

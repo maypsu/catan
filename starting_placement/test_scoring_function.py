@@ -25,10 +25,10 @@ def score(board, intersection, verbose=False):
     # 2 Road Building = 2 * 1/3  (2 Roads = 1/3 of a point)
     # 2 Monopoly = 2 * 1 (It's generally going to net you a victory point)
     # 2 Year of Plenty = 2 * 1 (Again, generally going to net you a victory point)
-    # 7 Knights = 7 * 1/4 (Generally going to take 4 to win largest army?)
+    # 7 Knights = 7 * 2/4 (Generally going to take 4 to win largest army?)
     # 5 Victory Cards = 5 * 1
-    # Total = ((2/3) + 2 + 2 + 7/4 + 5) / 18) = .63
-    score += .63 * (ore + wool + grain) / 3
+    # Total = ((2/3) + 2 + 2 + 7/4 + 5) / 18) = 1.26
+    score += 1.26 * (ore + wool + grain) / 3
     if verbose:
         print("Score from DCP: ", .63 * (ore + wool + grain) / 3)
 

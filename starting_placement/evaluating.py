@@ -10,7 +10,7 @@ from .TrainingEnvironment import TrainingEnvironment
 from .RandoBot import RandoBot
 
 if __name__ == "__main__":
-    model = tf.keras.models.load_model("fooling.keras")
+    model = tf.keras.models.load_model("candidate_1.keras")
 
     rewards = []
     for _ in range(1):

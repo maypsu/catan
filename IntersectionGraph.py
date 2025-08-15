@@ -60,6 +60,17 @@ class Intersection:
     def blockedCity(self, pname, settlements):
         return self not in settlements or settlements[self] is not pname
 
+    def __eq__(self, other):
+        if not isinstance(other, Intersection): return NotImplemented
+        return self.hexCoords[0] == other.hexCoords[0]
+    
+    def __hash__(self):
+        return self.hexCoords[0].__hash__()
+    
+    def __lt__(self, other):
+        if not isinstance(other, Intersection): return NotImplemented
+        return self.hexCoords[0] < other.hexCoords[0]
+
     def __str__(self):
         return str(self.hexCoords) #[0])
 
@@ -81,6 +92,17 @@ class Path:
         
         return False
     
+    def __eq__(self, other):
+        if not isinstance(other, Path): return NotImplemented
+        return self.hexCoords[0] == other.hexCoords[0]
+    
+    def __hash__(self):
+        return self.hexCoords[0].__hash__()
+    
+    def __lt__(self, other):
+        if not isinstance(other, Path): return NotImplemented
+        return self.hexCoords[0] < other.hexCoords[0]
+
     def __str__(self):
         return str(self.hexCoords) #[0])
 
