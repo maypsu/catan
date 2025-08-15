@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import random
 import tensorflow as tf
@@ -11,16 +12,29 @@ from .PolicyNetwork import PolicyNetwork, mask_and_sample, expand_dims
 from .TrainingEnvironment import TrainingEnvironment
 from .RandoBot import RandoBot
 
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", type=str)
+    parser.add_argument("--output", type=str, default="default.keras")
+    parser.add_argument("--time", type=float, default=1)
+    parser.add_argument("--fresh", action="store_false")
+    return parser.parse_args()
+
 if __name__ == "__main__":
-    model = PolicyNetwork(54, 72)
-    #model = tf.keras.models.load_model("fooling.keras")
+    args = parseArguments()
+
+    if args.fresh:
+        model = PolicyNetwork(54, 72)
+    else:
+        if not args.input:
+            raise Exception("Must specify --fresh or --input model")
+        model = tf.keras.models.load_model(args.input)
+
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.01) 
     start_time = time.time()
 
-    # 100000 took 61 minutes
-    # 500000 took 2.3 hours
     iterations = 0
-    while (time.time() - start_time) < 7 * 60 * 60:
+    while (time.time() - start_time) < args.time * 60:
         players = ["Red", "Blue", "Yellow", "Green"]
         random.shuffle(players)
         env = TrainingEnvironment(BoardState(players), players, RandoBot())
@@ -50,6 +64,6 @@ if __name__ == "__main__":
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
         iterations += 1
 
-    model.save("noodling.keras")
+    model.save(args.output)
     print ("Elapsed Time: ", str(time.time() - start_time), "Iterations:", iterations, flush=True)
     visualization.draw_board(env.board, env.reward("Red"))

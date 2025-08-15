@@ -3,6 +3,7 @@ import random
 import Defines as D
 from BoardState import BoardState
 import visualization
+import coordinate_chart
 
 def resourceProbability(board, intersection):
     rv = [0] * 5
@@ -28,36 +29,64 @@ def score(board, intersection, verbose=False):
     # 7 Knights = 7 * 2/4 (Generally going to take 4 to win largest army?)
     # 5 Victory Cards = 5 * 1
     # Total = ((2/3) + 2 + 2 + 7/4 + 5) / 18) = 1.26
-    score += 1.26 * (ore + wool + grain) / 3
+    dcp_score = 0
+    for resource in [ore, wool, grain]:
+        if resource == 0.0:
+            dcp_score -= 1
+    if dcp_score == 0:
+        dcp_score = 1 + (ore + wool + grain) * 10
+    score += 1.26 * dcp_score / 3
     if verbose:
-        print("Score from DCP: ", .63 * (ore + wool + grain) / 3)
+        print("Score from DCP: ",  1.26 * dcp_score / 3)
 
     # Settlement Potential = 1
-    score += 1 * (brick + lumber + wool + grain) / 4
+    settlement_score = 0
+    for resource in [brick, lumber, wool, grain]:
+        if resource == 0.0:
+            settlement_score -= 1
+    if settlement_score == 0:
+        settlement_score = 1 + (brick + lumber + wool + grain) * 10
+    score += 1 * settlement_score / 4
     if verbose:
-        print("Score from Settlement Potential: ", 1 * (brick + lumber + wool + grain) / 4)
+        print("Score from Settlement Potential: ", 1 *  settlement_score / 4)
 
     # City Potential = 1
-    score += 1 * (2 * ore + 3 * grain) / 5
+    city_score = 0
+    for resource in [ore, ore, grain, grain, grain]:
+        if resource == 0.0:
+            city_score -= 1
+    if city_score == 0:
+        city_score = 1 + (ore + ore + grain + grain + grain) * 10
+    score += 1 * city_score / 5
     if verbose:
-        print("Score from City Potential: ", 1 * (2 * ore + 3 * grain) / 5)
+        print("Score from City Potential: ", 1 *  city_score / 5)
 
-    # Road Potential = 1/6 (Roughly 6 roads to win longest road?)
-    score += (1/6) * (brick + lumber) / 2
+    # Road Potential = 2/6 (Roughly 6 roads to win longest road?)
+    road_score = 0
+    for resource in [brick, lumber]:
+        if resource == 0.0:
+            road_score -= 1
+    if road_score == 0:
+        road_score = 1 + (brick + lumber) * 10
+    score += (2/6) * road_score / 2
     if verbose:
-        print("Score from Road Potential: ", (1/6) * (brick + lumber) / 2)
+        print("Score from Road Potential: ", (2/6) * brick * lumber)
     
-    return score
+    return [dcp_score, settlement_score, city_score, road_score]
 
 players = ["Red", "Blue", "Yellow", "Green"]
 random.shuffle(players)
 board = BoardState(players)
 
-scores = []
+chart_data = []
+group_sizes = []
 for intersection in board.graph.sortedIntersections:
-    scores.append((score(board, intersection), intersection.hexCoords[0]))
+    group_sizes.append(len(intersection.hexes))
+    rp = resourceProbability(board, intersection)
+    s = score(board, intersection)
+    for h in intersection.hexes:
+        hex = board.board[h]
+        p = rp[D.resourceIndex(D.RESOURCE_PRODUCTION[hex.tile])] if D.RESOURCE_PRODUCTION[hex.tile] else 0
+        chart_data.append([intersection.hexCoords[0], hex.tile, hex.number, f"{p:.4f}"] + [f"{x:.4f}" for x in s])
 
-for (i, s) in sorted(scores):
-    print ("Intersection: ", i, "Score: ", s, flush=True)
-
-visualization.draw_board(board, 0.0)
+coordinate_chart.create_grid_chart(len(group_sizes), group_sizes, chart_data)

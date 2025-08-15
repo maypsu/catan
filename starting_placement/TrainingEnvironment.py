@@ -44,14 +44,14 @@ class TrainingEnvironment:
         return self.state(), reward, done
 
     def reward(self, pname, verbose=False):
+        score = 0
+
         # Assumption: the extra advantages offset.  Roads opening up settlements, settlements/cities improving production, 
         #    knights moving the robber, monopoly stealing from opponents, hidden victory points.
-        [brick, lumber, ore, grain, wool] = self.board.playerResourceProbability(pname)
+        [brick, lumber, ore, grain, wool] =  self.board.playerResourceProbability(pname)
         if verbose:
             print("Resource Probabilities: ", brick, lumber, ore, grain, wool)
 
-        
-        potential_score = 0
         # Development Card Potential = .63
         # 2 Road Building = 2 * 1/3  (2 Roads = 1/3 of a point)
         # 2 Monopoly = 2 * 1 (It's generally going to net you a victory point)
@@ -59,24 +59,48 @@ class TrainingEnvironment:
         # 7 Knights = 7 * 2/4 (Generally going to take 4 to win largest army?)
         # 5 Victory Cards = 5 * 1
         # Total = ((2/3) + 2 + 2 + 7/4 + 5) / 18) = 1.26
-        potential_score += 1.26 * (ore + wool + grain) / 3
+        dcp_score = 0
+        for resource in [ore, wool, grain]:
+            if resource == 0.0:
+                dcp_score -= 1
+        if dcp_score == 0:
+            dcp_score = 1 + (ore + wool + grain) * 10
+        score += 1.26 * dcp_score / 3
         if verbose:
-            print("Score from DCP: ", .63 * (ore + wool + grain) / 3)
+            print("Score from DCP: ",  1.26 * dcp_score / 3)
 
         # Settlement Potential = 1
-        potential_score += 1 * (brick + lumber + wool + grain) / 4
+        settlement_score = 0
+        for resource in [brick, lumber, wool, grain]:
+            if resource == 0.0:
+                settlement_score -= 1
+        if settlement_score == 0:
+            settlement_score = 1 + (brick + lumber + wool + grain) * 10
+        score += 1 * settlement_score / 4
         if verbose:
-            print("Score from Settlement Potential: ", 1 * (brick + lumber + wool + grain) / 4)
+            print("Score from Settlement Potential: ", 1 *  settlement_score / 4)
 
         # City Potential = 1
-        potential_score += 1 * (2 * ore + 3 * grain) / 5
+        city_score = 0
+        for resource in [ore, ore, grain, grain, grain]:
+            if resource == 0.0:
+                city_score -= 1
+        if city_score == 0:
+            city_score = 1 + (ore + ore + grain + grain + grain) * 10
+        score += 1 * city_score / 5
         if verbose:
-            print("Score from City Potential: ", 1 * (2 * ore + 3 * grain) / 5)
+            print("Score from City Potential: ", 1 *  city_score / 5)
 
-        # Road Potential = 1/6 (Roughly 6 roads to win longest road?)
-        potential_score += (1/6) * (brick + lumber) / 2
+        # Road Potential = 2/6 (Roughly 6 roads to win longest road?)
+        road_score = 0
+        for resource in [brick, lumber]:
+            if resource == 0.0:
+                road_score -= 1
+        if road_score == 0:
+            road_score = 1 + (brick + lumber) * 10
+        score += (2/6) * road_score / 2
         if verbose:
-            print("Score from Road Potential: ", (1/6) * (brick + lumber) / 2)
+            print("Score from Road Potential: ", (2/6) * brick * lumber)
 
         # Road Connection Distance - is this too much of a bonus?
         #score += .1 * (1 - (self.board.roadConnectionDistance(pname) / 4))
@@ -86,6 +110,6 @@ class TrainingEnvironment:
         #  Edge Guard
         for settlement in [k for k, v in self.board.settlements.items() if v == pname]:
             if len(settlement.adjacent) < 3:
-                potential_score -= .1
+                score -= 1
 
-        return potential_score
+        return score

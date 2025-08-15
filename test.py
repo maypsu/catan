@@ -1,3 +1,4 @@
+import argparse
 import random
 import time
 
@@ -7,6 +8,11 @@ import IntersectionGraph as IG
 import starting_placement.RandoBot as RandoBot
 import starting_placement.ModelBot as ModelBot
 import visualization
+
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", default="fooling.keras", type=str)
+    return parser.parse_args()
 
 def playGame(bots, verbose=True):
 
@@ -72,7 +78,8 @@ def playGame(bots, verbose=True):
         
     return "none"
 
-bots = { "Red" : ModelBot.ModelBot("fooling.keras"), "Blue" : RandoBot.RandoBot(), "Yellow" : RandoBot.RandoBot(), "Green" : RandoBot.RandoBot() }
+args = parseArguments()
+bots = { "Red" : ModelBot.ModelBot(args.input), "Blue" : RandoBot.RandoBot(), "Yellow" : RandoBot.RandoBot(), "Green" : RandoBot.RandoBot() }
 
 start_time = time.time()
 winners = {}

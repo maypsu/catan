@@ -1,33 +1,51 @@
+import argparse
+import numpy as np
 import random
 
 import BoardState
-import starting_placement.BetterBot as BetterBot
+import starting_placement.TrainingEnvironment as TE
+import starting_placement.ModelBot as ModelBot
+import starting_placement.RandoBot as RandoBot
 import visualization
 
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", default="fooling.keras", type=str)
+    return parser.parse_args()
 
-players = ["Red", "Blue", "Yellow", "Green"]
-random.shuffle(players)
-board = BoardState.BoardState(players)
+args = parseArguments()
+bots = { "Red" : ModelBot.ModelBot(args.input), "Blue" : RandoBot.RandoBot(), "Yellow" : RandoBot.RandoBot(), "Green" : RandoBot.RandoBot() }
 
-board.buildSettle("Red", (0, 0, 0), start=True)
-board.buildRoad("Red", (0, 0, 0), start=True)
-board.buildSettle("Red", (2, -2, 2), start=True)
-board.buildRoad("Red", (2, -2, 2), start=True)
+scores = {}
+for i in range(10000):
+    players = ["Red", "Blue", "Yellow", "Green"]
+    random.shuffle(players)
+    board = BoardState.BoardState(players)
+    env = TE.TrainingEnvironment(board, players, bots["Red"])
+    
+    for player in board.players:
+        settlement, road = bots[player].initialPlace(board.players[player], board)
+        if not board.buildSettle(player, settlement, start=True, verbose=False): 
+            raise Exception(f"Could not place SETTLEMENT at determined coordinates {settlement}")
 
-board.buildSettle("Green", (1, -1, 1), start=True)
-board.buildRoad("Green", (1, -1, 1), start=True)
-board.buildSettle("Green", (0, 0, 4), start=True)
-board.buildRoad("Green", (0, 0, 4), start=True)
+        if not board.buildRoad(player, road, start=True, verbose=False): 
+            raise Exception(f"Could not place ROAD at determined coordinates {road}")
 
-board.buildSettle("Green", (2, -1, 5), start=True)
-board.buildRoad("Green", (2, -1, 5), start=True)
-board.buildSettle("Green", (2, -1, 3), start=True)
-board.buildRoad("Green", (2, -1, 3), start=True)
+    for player in reversed(board.players):
+        settlement, road = bots[player].initialPlace(board.players[player], board)
+        if not board.buildSettle(player, settlement, start=True, verbose=False):
+            raise Exception(f"Could not place SETTLEMENT at determined coordinates {settlement}")
 
+        if not board.buildRoad(player, road, start=True, verbose=False): 
+            raise Exception(f"Could not place ROAD at determined coordinates {road}")
 
-bot = BetterBot.BetterBot()
-road = bot.pickRoad("Red", board)
-print (road if road else "None", flush=True)
-board.buildRoad("Red", road.hexCoords[0], start=True, verbose=True)
+    for player in players:
+        score = env.reward(player)
+        if player not in scores:
+            scores[player] = []
+        scores[player].append(score)
 
-visualization.draw_board(board, 0.0)
+print ("Scores")
+for player in players:
+    print ("Player", player, "\tMin", f"{np.min(scores[player]):.4f}", "Max", f"{np.max(scores[player]):.4f}", "Ave", f"{np.mean(scores[player]):.4f}")
+
