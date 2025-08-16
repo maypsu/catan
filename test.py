@@ -12,6 +12,8 @@ import visualization
 def parseArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", default="fooling.keras", type=str)
+    parser.add_argument("--range", default=10000, type=int)
+    parser.add_argument("--visualize", action="store_true")
     return parser.parse_args()
 
 def playGame(bots, verbose=True):
@@ -56,9 +58,23 @@ def playGame(bots, verbose=True):
             bot.playCards(player, board, verbose=verbose)
 
             # Produce
-            # Pick a random spot for the robber to move if a 7 is rolled
-            robber_opponent, robber_hex = bot.pickRobber(pname, board)
-            board.produce(pname, robber_opponent, robber_hex, verbose=verbose)
+            # Pass the player bot to pick a random spot for the robber to move if a 7 is rolled
+            board.produce(pname, bot, verbose=verbose)
+
+            # Trades!
+            trades = bot.getTrades(pname, board)
+            if trades:
+                accepts = []
+                for (opponent, give, take) in trades:
+                    if bots[opponent.name].considerTrade(opponent, player, take, give):
+                        try:
+                            board.executeTrade(player, opponent, give, take)
+                        except Exception:
+                            print (f"Player: {player}")
+                            print (f"Opponent: {opponent}")
+                            print (f"Give: {give} Take: {take}")
+                            raise
+                        break
 
             # Build
             if not bot.attemptBuild(player, board, verbose=verbose):
@@ -74,17 +90,19 @@ def playGame(bots, verbose=True):
             if player.victory == 10:
                 if verbose:
                     print ("VICTORY for %s" % player.name)
-                return player.name
+                return player.name, board
         
-    return "none"
+    return "none", board
 
 args = parseArguments()
 bots = { "Red" : ModelBot.ModelBot(args.input), "Blue" : RandoBot.RandoBot(), "Yellow" : RandoBot.RandoBot(), "Green" : RandoBot.RandoBot() }
 
 start_time = time.time()
 winners = {}
-for _ in range(10000):
-    winner = playGame(bots, verbose=False)
+for _ in range(args.range):
+    winner, board = playGame(bots, verbose=False)
     winners[winner] = winners.get(winner, 0) + 1
 print ("Elapsed Time:", str(time.time() - start_time))
 print (winners)
+
+if args.visualize: visualization.draw_board(board, 0.0)

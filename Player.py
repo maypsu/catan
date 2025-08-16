@@ -30,6 +30,16 @@ class Player:
         for type in resources:
             amount = resources[type]
             self.resources[D.resourceIndex(type)] -= amount
+        if any([count < 0 for count in self.resources]):
+            raise Exception(f"Negative resources detected {self.resources}")
+
+    def addResourcesArray(self, resources):
+        self.resources = [x + y for x, y in zip(self.resources, resources)]
+
+    def removeResourcesArray(self, resources):
+        self.resources = [x - y for x, y in zip(self.resources, resources)]
+        if any([count < 0 for count in self.resources]):
+            raise Exception(f"Negative resources detected {self.resources}")
 
     def canAffordResources(self, resources):
         for type in resources:

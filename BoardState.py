@@ -139,19 +139,18 @@ class BoardState:
         return True
     
     
-    def buildRoad(self, pname, coordinate, start=False, verbose=True):
+    def buildRoad(self, pname, coordinate, start=False, free=False, verbose=True):
         player = self.players[pname]
         path = BoardState.graph.paths[(coordinate)]
         # Has Roads left
         if player.supply[D.supplyIndex("Road")] == 0: return False
 
-        if not start:
+        if not start and not free:
             # Can afford
             if not player.canAffordResources(D.supplyCost("Road")): return False
 
         # Can connect
-        connect = False
-        if not path.canConnect(pname, self.roads, self.settlements, start): return False
+        if not free and not path.canConnect(pname, self.roads, self.settlements, start): return False
 
         # Something in the way
         if path.blockedRoad(self.roads): return False
@@ -160,7 +159,7 @@ class BoardState:
         player.supply[D.supplyIndex("Road")] -= 1
 
         # Spend that money
-        if not start:
+        if not free and not start:
             player.removeResources(D.supplyCost("Road"))
         if verbose:
             print ("Player %s built road at %s" % (pname, path))
@@ -202,13 +201,14 @@ class BoardState:
 
         return True
 
-    def produce(self, pname, target, robber, verbose=True):
+    def produce(self, pname, robber, verbose=True):
         roll = random.randint(1, 6) + random.randint(1, 6)
         if verbose:
             print ("Rolled", roll)
 
         if roll == 7:
-            self.robber(pname, target, robber, verbose=verbose)
+            target, coords = robber.pickRobber(pname, self)
+            self.robber(pname, target, coords, verbose=verbose)
             return
 
         playerProduction = {}
@@ -350,6 +350,13 @@ class BoardState:
             return True
         
         raise Exception("Attempted to play DevelopmentCard with unknown type: " + card)
+
+    def executeTrade(self, player, opponent, give, take):
+        player.addResourcesArray(take)
+        opponent.addResourcesArray(give)
+
+        player.removeResourcesArray(give)
+        opponent.removeResourcesArray(take)
 
     def tradeMaritime(self, pname, outgoing, incoming, verbose=True):
         player = self.players[pname]

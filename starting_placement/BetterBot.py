@@ -1,6 +1,9 @@
 import random
+import time
 
 import Defines as D
+from RobberMCTS import mctsRobber
+import TradeCards
 
 class BetterBot:
     def __init__(self):
@@ -28,53 +31,58 @@ class BetterBot:
     def playCards(self, player, board, verbose=True):
         if (player.developments):
             card = random.choice(player.developments)
-            ds = 0
-            for _ in range(0, 100):
-                ds += 1
-                if board.playDevelopment(player.name, card, self.bot.randomExtra(card, player.name, board), verbose=verbose):
-                    break
-
+            if card == "Road Building":
+                if player.supply[0] == 0: return
+                first = self.pickRoad(player.name, board, verbose=verbose)
+                second = self.pickRoad(player.name, board, first=first, verbose=verbose)
+                if not first or not second: return
+                board.playDevelopment(player.name, card, [first.hexCoords[0], second.hexCoords[0]], verbose=verbose)
+            else:
+                for _ in range(0, 100):
+                    if board.playDevelopment(player.name, card, self.randomExtra(card, player.name, board), verbose=verbose):
+                        break
 
     def attemptBuild(self, player, board, verbose=True):
         pname = player.name
         if (player.canAffordResources(D.supplyCost("City")) and player.supply[2] > 0 and player.supply[1] < 5):
-            for _ in range(0, 100):
-                if board.buildCity(pname, pickRandom(), verbose=verbose):
-                    self.statistics[2] += 1
-                    return True
+            for settlement in [s for s, p in board.settlements.items() if p == pname]:
+                if board.buildCity(pname, settlement.hexCoords[0], verbose=verbose):
+                     self.statistics[2] += 1
+                     return True
 
         if (player.canAffordResources(D.supplyCost("Settlement")) and player.supply[1] > 0):
-            for _ in range(0, 100):
-                if board.buildSettle(pname, pickRandom(), verbose=verbose):
+            intersection = pickSettlement(pname, board, verbose=verbose)
+            if intersection:
+                if board.buildSettle(pname, intersection.hexCoords[0], verbose=verbose):
                     self.statistics[1] += 1
-                    return True
-
-        if (player.canAffordResources(D.supplyCost("Road")) and player.supply[0] > 0):
-            for _ in range(0, 100):
-                if board.buildRoad(pname, pickRandom(), verbose=verbose):
-                    self.statistics[0] += 1
                     return True
 
         if (player.canAffordResources(D.supplyCost("Development")) and board.developments):
             board.buyDevelopment(pname, verbose=verbose)
             self.statistics[3] += 1
             return True
+
+        if (player.canAffordResources(D.supplyCost("Road")) and player.supply[0] > 0):
+            intersections = set()
+            for road in [r for r, p in board.roads.items() if p == pname]:
+                for i in road.adjacent:
+                    if not i.blockedSettle(board.settlements | board.cities):
+                        intersections.add(i)
+            if len(intersections) < 4:
+                road = self.pickRoad(pname, board, verbose=verbose)
+                if road and board.buildRoad(pname, road.hexCoords[0], verbose=verbose):
+                    self.statistics[0] += 1
+                    return True
         
         return False
     
     def pickRobber(self, pname, board):
-        while True:
-            (q, r, _) = pickRandom()
-            robber = (q, r)
+        hex, target = mctsRobber(pname, board)
 
-            producers = board.settlements | board.cities
-            for x in range(0, 6):
-                intersection = board.graph.intersections[(q, r, x)]
-                if intersection in producers and producers[intersection] is not pname: 
-                    return producers[intersection], robber
+        return target, hex.coords
 
-    def pickRoad(self, pname, board, first=None):
-        # 
+    def pickRoad(self, pname, board, first=None, verbose=True):
+        start_time = time.time()
         existing_roads = [k for k, v in board.roads.items() if v == pname]
         if first: existing_roads.append(first)
 
@@ -87,11 +95,10 @@ class BetterBot:
         tip_roads = []
         for i in known_intersections:
             for (r, _) in sorted(i.adjacent):
-                if r not in board.roads:
+                if r not in board.roads and r is not first:
                     tip_roads.append((r, r, 0))
 
         tip_roads.sort()
-
         exhausted_roads = list(board.roads.keys())
         if first: exhausted_roads.append(first)
 
@@ -132,33 +139,50 @@ class BetterBot:
 
         tscores = [(v, k) for k, v in scores.items()]
         tscores.sort(key=lambda k: k[0], reverse=True)
-        for (s, t) in tscores: print (s, t)
 
-        if tscores: return tscores[0][1]
+        if verbose:
+            print ("Pick Road Time:", str(time.time() - start_time))
+        if tscores and tscores[0][0] > 0: return tscores[0][1]
         else: return None
-    
-    def getUnblockedNeighbors(self, road, pname, board):
-        unblockedNeighbors = []
-        for intersection in road.adjacent:
-            if intersection in board.settlements and board.settlements[intersection] != pname \
-                or intersection in board.cities and board.cities[intersection] != pname:
-                continue
-            for (x, _) in intersection.adjacent:
-                if not x.blockedRoad(board.roads):
-                    unblockedNeighbors.append(x)
-        return unblockedNeighbors
 
-    def randomExtra(self, card, pname, board):
+    def getTrades(self, pname, board):
+        return TradeCards.getTrades(pname, board)
+    
+    def considerTrade(self, player, opponent, give, take):
+        return TradeCards.considerTrade(player, opponent, give, take)
+
+    def randomExtra(self, card, pname, board, verbose=False):
         if card in D.VICTORY_CARDS:
             return []
         if card == "Knight":
             return self.pickRobber(pname, board)
-        if card == "Road Building":
-            return [self.randomRoad(pname, False, board), self.randomRoad(pname, False, board)]
         if card == "Monopoly":
-            return random.choices(D.RESOURCE_TYPES, k=1)
+            resources = [0] * 5
+            for player in board.players.values():
+                if player.name is not pname:
+                    resources = [x + y for x, y in zip(player.resources, resources)]
+            m = max(resources)
+            if m > 0:
+                return [D.RESOURCE_TYPES[resources.index(m)]]
         if card == "Year of Plenty":
             return random.choices(D.RESOURCE_TYPES, k=2)
+
+def pickSettlement(pname, board, verbose=True):
+    intersections = set()
+    for road in [r for r, p in board.roads.items() if p == pname]:
+        for i in road.adjacent:
+            intersections.add(i)
+
+    scores = []
+    for intersection in intersections:
+        scores.append((scoreIntersection(board, intersection, verbose=verbose), intersection))
+
+    scores.sort()
+
+    if scores and scores[0][0] > 0:
+        return scores[0][1]
+    else:
+        return None
 
 def pickRandom():
     while True:

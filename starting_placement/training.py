@@ -11,13 +11,15 @@ import visualization
 from .PolicyNetwork import PolicyNetwork, mask_and_sample, expand_dims
 from .TrainingEnvironment import TrainingEnvironment
 from .RandoBot import RandoBot
+from .ModelBot import ModelBot
 
 def parseArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str)
     parser.add_argument("--output", type=str, default="default.keras")
     parser.add_argument("--time", type=float, default=1)
-    parser.add_argument("--fresh", action="store_false")
+    parser.add_argument("--fresh", action="store_true")
+    parser.add_argument("--random", action="store_true")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -29,6 +31,11 @@ if __name__ == "__main__":
         if not args.input:
             raise Exception("Must specify --fresh or --input model")
         model = tf.keras.models.load_model(args.input)
+
+    if args.random:
+        bot = RandoBot()
+    else:
+        bot = ModelBot(args.input)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.01) 
     start_time = time.time()

@@ -91,6 +91,33 @@ class RandoBot:
             return random.choices(D.RESOURCE_TYPES, k=1)
         if card == "Year of Plenty":
             return random.choices(D.RESOURCE_TYPES, k=2)
+        
+    def getTrades(self, pname, board):
+        extras = [max(0, x - y) for x, y in zip(board.players[pname].resources, [1, 1, 3, 2, 1])]
+        if not any([count > 0 for count in extras]): return []
+
+        player_max = max(extras)
+        give = [0] * 5
+        give[extras.index(player_max)] = 1
+
+        trades = []
+        for opponent in board.players.values():
+            if opponent.name == pname: continue
+            opponent_extras = [max(0, x - y) for x, y in zip(opponent.resources, [1, 1, 3, 2, 1])]
+            if not any([count > 0 for count in extras]): continue
+
+            opponent_max = max(opponent_extras)
+            take = [0] * 5
+            take[opponent_extras.index(opponent_max)] = 1
+            trades.append((opponent, give, take))
+        
+        return trades
+    
+    def considerTrade(self, player, opponent, give, take):
+        extras = [max(0, x - y) for x, y in zip(player.resources, [1, 1, 3, 2, 1])]
+        if any([x - y < 0 for x, y in zip(extras, give)]): return False
+
+        return random.randint(0, 1) == 1
 
 def pickRandom():
     while True:

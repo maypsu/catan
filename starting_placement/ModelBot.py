@@ -2,9 +2,9 @@ import numpy as np
 import tensorflow as tf
 
 from .PolicyNetwork import PolicyNetwork
-from .RandoBot import RandoBot
+from .BetterBot import BetterBot
 
-class ModelBot(RandoBot):
+class ModelBot(BetterBot):
     def __init__(self, filename):
         super().__init__()
 

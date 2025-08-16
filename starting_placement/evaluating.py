@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import random
 import tensorflow as tf
@@ -9,8 +10,15 @@ from .PolicyNetwork import PolicyNetwork
 from .TrainingEnvironment import TrainingEnvironment
 from .RandoBot import RandoBot
 
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", type=str)
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    model = tf.keras.models.load_model("candidate_1.keras")
+    args = parseArguments()
+    model = tf.keras.models.load_model(args.input)
 
     rewards = []
     for _ in range(1):

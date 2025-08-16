@@ -3,6 +3,7 @@ class Hex:
     def __init__(self, q, r, tile, robber):
         self.q = q
         self.r = r
+        self.coords = (q, r)
 
         self.tile = tile
         self.number = 0

@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from BoardState import BoardState
 import Defines as D
 
 HEX_LAYOUT = [
@@ -86,6 +85,7 @@ def draw_board(board, reward):
     plt.show()
 
 if __name__ == "__main__":
+    from BoardState import BoardState
     players = ["Red", "Blue", "Yellow", "Green"]
     board = BoardState(players)
 

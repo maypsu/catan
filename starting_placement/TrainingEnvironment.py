@@ -82,11 +82,11 @@ class TrainingEnvironment:
 
         # City Potential = 1
         city_score = 0
-        for resource in [ore, ore, grain, grain, grain]:
+        for resource in [ore, ore, ore, grain, grain]:
             if resource == 0.0:
                 city_score -= 1
         if city_score == 0:
-            city_score = 1 + (ore + ore + grain + grain + grain) * 10
+            city_score = 1 + (ore + ore + ore + grain + grain) * 10
         score += 1 * city_score / 5
         if verbose:
             print("Score from City Potential: ", 1 *  city_score / 5)
