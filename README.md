@@ -1,5 +1,11 @@
 # Settlers of Catan
 
+This program is implemented in three components aligning with the three phases of the project outline in the report.  The game framework implementation is in the root directory.  The bot implementations are in the bot subproject.  The starting placement algorithm is in the starting_placement subproject.
+
+The final submission for the starting placement model is saved_models/candidate_2.keras.
+
+Author: Michael Yeager (may5317@psu.edu)
+
 ## To run the programs
 
 ### Score a starting placement model against the reward function
@@ -15,6 +21,9 @@ python -m run --better
 python -m starting_placement.training --fresh --random --time 10 --output 'trial_{}.out'
 
 This will generate a model in the file 'trial_1.out' using a fresh policy network and the RandoBot to train.  It will run for 10 minutes.
+
+### To run the starting placement model through the game phase once and visualize the resulting game state
+python -m starting_placement.evaluating --input saved_models/candidate_2.keras
 
 ## Key Classes
 ### Board State

@@ -2,9 +2,9 @@ import random
 import time
 
 import Defines as D
-from RobberMCTS import mctsRobber
+from .RobberMCTS import mctsRobber
 from .RandoBot import RandoBot
-import TradeCards
+from .TradeCards import getTrades, considerTrade
 
 # Heuristic based bot
 class BetterBot(RandoBot):
@@ -144,11 +144,11 @@ class BetterBot(RandoBot):
 
     # Use the decision tree for trades
     def getTrades(self, pname, board):
-        return TradeCards.getTrades(pname, board)
+        return getTrades(pname, board)
     
     # Use the decision tree for trades
     def considerTrade(self, player, opponent, give, take):
-        return TradeCards.considerTrade(player, opponent, give, take)
+        return considerTrade(player, opponent, give, take)
 
     # Choose a pseudo-random extra
     def randomExtra(self, card, pname, board, verbose=False):
