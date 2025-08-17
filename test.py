@@ -5,9 +5,11 @@ import time
 from BoardState import BoardState
 import Defines as D
 import IntersectionGraph as IG
-import starting_placement.RandoBot as RandoBot
-import starting_placement.ModelBot as ModelBot
+import bots.RandoBot as RandoBot
+import bots.ModelBot as ModelBot
 import visualization
+
+# This script plays the whole game loop and reports the win/loss statistics
 
 def parseArguments():
     parser = argparse.ArgumentParser()

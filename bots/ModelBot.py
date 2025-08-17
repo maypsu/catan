@@ -1,10 +1,10 @@
 import numpy as np
 import tensorflow as tf
 
-from .PolicyNetwork import PolicyNetwork
-from .BetterBot import BetterBot
+from starting_placement.PolicyNetwork import PolicyNetwork
+from .RandoBot import RandoBot
 
-class ModelBot(BetterBot):
+class ModelBot(RandoBot):
     def __init__(self, filename):
         super().__init__()
 

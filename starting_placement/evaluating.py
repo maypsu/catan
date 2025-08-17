@@ -8,13 +8,13 @@ import visualization
 
 from .PolicyNetwork import PolicyNetwork
 from .TrainingEnvironment import TrainingEnvironment
-from .RandoBot import RandoBot
+from bots.RandoBot import RandoBot
 
+# This is a quick script to run a model through a single iteration to visualize the results
 def parseArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str)
     return parser.parse_args()
-
 
 if __name__ == "__main__":
     args = parseArguments()

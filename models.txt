@@ -1,9 +1,0 @@
-Nightly 0 : Elapsed Time:  3600.0285081863403 Iterations: 150553
-Nightly 1 : Elapsed Time:  3600.024061203003 Iterations: 155330
-Nightly 2 : Elapsed Time:  3600.026701450348 Iterations: 155223
-Nightly 3 : Elapsed Time:  3600.023256778717 Iterations: 153977
-Nightly 4 : Elapsed Time:  3600.028682947159 Iterations: 152443
-Nightly 5 : Elapsed Time:  3600.0105130672455 Iterations: 151133
-Nightly 6 : Elapsed Time:  3600.0353536605835 Iterations: 101664
-Nightly 7 : Elapsed Time:  3600.0685470104218 Iterations: 59008
-

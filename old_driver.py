@@ -1,4 +1,4 @@
-
+# Ignore this file.  It didn't work out, but there is some good code so I don't want to delete it.
 from BoardState import BoardState
 import Defines as D
 

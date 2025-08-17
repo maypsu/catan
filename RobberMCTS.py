@@ -5,7 +5,7 @@ from collections import defaultdict
 from BoardState import BoardState
 import visualization
 
-
+# Run the MCTS for choosing where the Robber token should be placed
 def mctsRobber(pname, board):
     root = build_tree("Red", board)
     run_mcts(pname, board, root)

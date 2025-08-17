@@ -1,8 +1,11 @@
 import random
 import Defines as D
+# Decision Tree for which cards to trade
 
+# The resources required to build one of something
 BASE_RESOURCES = [1, 1, 3, 2, 1]
 
+# Execute the tree to decide what trades to offer
 def getTrades(pname, board):
     player = board.players[pname]
     resources = player.resources.copy()
@@ -54,6 +57,7 @@ def getTrades(pname, board):
 
     return acceptable_trades
 
+# Consider whether to accept a trade
 def considerTrade(player, opponent, give, take):
     player_resources = player.resources
 
@@ -83,9 +87,11 @@ def considerTrade(player, opponent, give, take):
     # Okay fam, lets play
     return True
 
+# Can the resources build anything?
 def canBuildAny(resources):
     return D.canBuildCity(resources) or D.canBuildSettlement(resources) or D.canBuyDevelopmentCard(resources)
 
+# What resources are missing to build the target building type?
 def missingResources(resources, target):
     missing = [0] * 5
     for resource, cost in D.SUPPLY_COSTS[D.SUPPLY_TYPES[target]].items():
@@ -94,9 +100,11 @@ def missingResources(resources, target):
             missing[index] = cost - resources[index]
     return missing
 
+# simulate trading the resources
 def performTrade(player_resources, opponent_resources, give, take):
     return [x - g + t for x, g, t in zip(player_resources, give, take)], [x + g - t for x, g, t in zip(opponent_resources, give, take)]
 
+# compute a fair trade by equalizing the resources
 def fairTrade(extras, miss):
     miss_count = sum(miss)
     extra_count = sum(extras)
@@ -120,6 +128,7 @@ def fairTrade(extras, miss):
             m[i] -= 1
         return extras, m
 
+# Test?  TEST!!
 if __name__ == "__main__":
     from BoardState import BoardState
     players = ["Red", "Blue", "Yellow", "Green"]

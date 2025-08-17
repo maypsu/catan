@@ -3,8 +3,9 @@ import random
 import Defines as D
 from BoardState import BoardState
 import visualization
-import coordinate_chart
+from .coordinate_chart import create_grid_chart
 
+# This script was used during development to visualize the scoring of each intersection with the reward function
 def resourceProbability(board, intersection):
     rv = [0] * 5
     for hex in [board.board[h] for h in intersection.hexes]:
@@ -22,7 +23,7 @@ def score(board, intersection, verbose=False):
     if verbose:
         print("Resource Probabilities: ", brick, lumber, ore, grain, wool)
 
-    # Development Card Potential = .63
+    # Development Card Potential = 1.26
     # 2 Road Building = 2 * 1/3  (2 Roads = 1/3 of a point)
     # 2 Monopoly = 2 * 1 (It's generally going to net you a victory point)
     # 2 Year of Plenty = 2 * 1 (Again, generally going to net you a victory point)
@@ -52,11 +53,11 @@ def score(board, intersection, verbose=False):
 
     # City Potential = 1
     city_score = 0
-    for resource in [ore, ore, grain, grain, grain]:
+    for resource in [ore, ore, ore, grain, grain]:
         if resource == 0.0:
             city_score -= 1
     if city_score == 0:
-        city_score = 1 + (ore + ore + grain + grain + grain) * 10
+        city_score = 1 + (ore + ore + ore + grain + grain) * 10
     score += 1 * city_score / 5
     if verbose:
         print("Score from City Potential: ", 1 *  city_score / 5)
@@ -71,7 +72,12 @@ def score(board, intersection, verbose=False):
     score += (2/6) * road_score / 2
     if verbose:
         print("Score from Road Potential: ", (2/6) * brick * lumber)
-    
+
+    #  Edge Guard
+    for settlement in [k for k, v in self.board.settlements.items() if v == pname]:
+        if len(settlement.adjacent) < 3:
+            score -= 1
+
     return [dcp_score, settlement_score, city_score, road_score]
 
 players = ["Red", "Blue", "Yellow", "Green"]
@@ -89,4 +95,4 @@ for intersection in board.graph.sortedIntersections:
         p = rp[D.resourceIndex(D.RESOURCE_PRODUCTION[hex.tile])] if D.RESOURCE_PRODUCTION[hex.tile] else 0
         chart_data.append([intersection.hexCoords[0], hex.tile, hex.number, f"{p:.4f}"] + [f"{x:.4f}" for x in s])
 
-coordinate_chart.create_grid_chart(len(group_sizes), group_sizes, chart_data)
+create_grid_chart(len(group_sizes), group_sizes, chart_data)

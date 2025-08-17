@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import Defines as D
 
+# Show the board in a window
+
 HEX_LAYOUT = [
     (0, 0), (1, 0), (2, 0),
     (-0.5, -np.sqrt(3)/2), (0.5, -np.sqrt(3)/2), (1.5, -np.sqrt(3)/2), (2.5, -np.sqrt(3)/2),

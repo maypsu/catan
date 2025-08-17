@@ -2,10 +2,12 @@ import random
 
 import Defines as D
 
+# Bot implementing random decision
 class RandoBot:
     def __init__(self):
         self.statistics = [0, 0, 0, 0]
 
+    # Place the initial settlemetns and road
     def initialPlace(self, player, board):
         while True:
             coordinate = pickRandom()
@@ -25,6 +27,7 @@ class RandoBot:
             break
         return coordinate, foundPath.hexCoords[0]    
 
+    # Play development cards
     def playCards(self, player, board, verbose=True):
         if (player.developments):
             card = random.choice(player.developments)
@@ -34,7 +37,7 @@ class RandoBot:
                 if board.playDevelopment(player.name, card, self.randomExtra(card, player.name, board), verbose=verbose):
                     break
 
-
+    # try to build something with our resources, or buy a card
     def attemptBuild(self, player, board, verbose=True):
         pname = player.name
         if (player.canAffordResources(D.supplyCost("City")) and player.supply[2] > 0 and player.supply[1] < 5):
@@ -62,6 +65,7 @@ class RandoBot:
         
         return False
     
+    # Choose where the robber should move
     def pickRobber(self, pname, board):
         while True:
             (q, r, _) = pickRandom()
@@ -73,6 +77,7 @@ class RandoBot:
                 if intersection in producers and producers[intersection] is not pname: 
                     return producers[intersection], robber
 
+    # Pick somewhere where to place a road
     def randomRoad(self, pname, start, board):
         while True:
             coordinate = pickRandom()
@@ -80,6 +85,7 @@ class RandoBot:
             if path.canConnect(pname, board.roads, board.settlements, start):
                 return coordinate
 
+    # When playing a development card, randomly choose the targeted effects
     def randomExtra(self, card, pname, board):
         if card in D.VICTORY_CARDS:
             return []
@@ -91,7 +97,8 @@ class RandoBot:
             return random.choices(D.RESOURCE_TYPES, k=1)
         if card == "Year of Plenty":
             return random.choices(D.RESOURCE_TYPES, k=2)
-        
+    
+    # Choose what trades to do
     def getTrades(self, pname, board):
         extras = [max(0, x - y) for x, y in zip(board.players[pname].resources, [1, 1, 3, 2, 1])]
         if not any([count > 0 for count in extras]): return []
@@ -113,12 +120,14 @@ class RandoBot:
         
         return trades
     
+    # Choose what trades to accept (50/50)
     def considerTrade(self, player, opponent, give, take):
         extras = [max(0, x - y) for x, y in zip(player.resources, [1, 1, 3, 2, 1])]
         if any([x - y < 0 for x, y in zip(extras, give)]): return False
 
         return random.randint(0, 1) == 1
 
+# Choose a random grid coordinate
 def pickRandom():
     while True:
         q = random.randint(-2, 2)

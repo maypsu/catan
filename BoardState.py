@@ -8,6 +8,8 @@ import IntersectionGraph as IG
 
 # See https://www.redblobgames.com/grids/hexagons/implementation.html for explanation of hex grid
 
+CURRENT_PLAYER = "Red"
+
 class BoardState:
     graph = IG.Graph()
 
@@ -58,13 +60,14 @@ class BoardState:
         self.largestArmy = None
         self.longestRoad = None
 
+    # Build the state representation
     def state(self):
         board = self
 
         board_state = []
         # Active Player is always us!
         players_state = [0] * len(self.play_order)
-        players_state[self.play_order.index("Red")] = 1
+        players_state[self.play_order.index(CURRENT_PLAYER)] = 1
         board_state.extend(players_state)
 
         # Add the hex information (6 tile types, 11 possible numbers)
@@ -83,6 +86,7 @@ class BoardState:
                     number[hex.number - 2] = 1
                 board_state.extend(tile + number)
 
+        # Build the intersection state (one-hot with the player that has a settlement)
         intersection_state = []
         for intersection in board.graph.sortedIntersections:
             settled = [0] * len(self.play_order)
@@ -94,6 +98,7 @@ class BoardState:
                 settled[self.play_order.index(pname)] = 1
             intersection_state.extend(settled)
 
+        # Build the path state (one-hot with the player that has a road)
         path_state = []
         for path in board.graph.sortedPaths:
             settled = [0] * len(self.play_order)
@@ -104,7 +109,7 @@ class BoardState:
 
         return board_state, intersection_state, path_state
 
-
+    # Build a settlement for the player at the coordinates
     def buildSettle(self, pname, coordinate, start=False, verbose=True):
         player = self.players[pname]
         intersection = BoardState.graph.intersections[coordinate]
@@ -112,6 +117,7 @@ class BoardState:
         # Has Settlements left
         if player.supply[D.supplyIndex("Settlement")] == 0: return False
 
+        # Only check these if we're not in the starting placement phase
         if (not start):
             # Can afford
             if not player.canAffordResources(D.supplyCost("Settlement")): return False
@@ -122,10 +128,12 @@ class BoardState:
         # Something in the way
         if intersection.blockedSettle(self.settlements | self.cities): return False
 
+        # Assign the settlement
         self.settlements[intersection] = pname
         if intersection.hexCoords[0] in D.HARBORS:
             player.harbors[D.harborIndex(D.HARBORS[intersection.hexCoords[0]])] = True
 
+        # Pay the cost, reap the rewards
         player.supply[D.supplyIndex("Settlement")] -= 1
         player.victory += 1
 
@@ -138,13 +146,14 @@ class BoardState:
 
         return True
     
-    
+    # Build a road for the player at the road coordinate (free is for Road Building)
     def buildRoad(self, pname, coordinate, start=False, free=False, verbose=True):
         player = self.players[pname]
         path = BoardState.graph.paths[(coordinate)]
         # Has Roads left
         if player.supply[D.supplyIndex("Road")] == 0: return False
 
+        # Free roads are free
         if not start and not free:
             # Can afford
             if not player.canAffordResources(D.supplyCost("Road")): return False
@@ -168,6 +177,7 @@ class BoardState:
 
         return True
 
+    # Build the city for the player at the coordinate
     def buildCity(self, pname, coordinate, verbose=True):
         player = self.players[pname]
         intersection = BoardState.graph.intersections[coordinate]
@@ -201,6 +211,7 @@ class BoardState:
 
         return True
 
+    # Produce
     def produce(self, pname, robber, verbose=True):
         roll = random.randint(1, 6) + random.randint(1, 6)
         if verbose:
@@ -231,7 +242,9 @@ class BoardState:
         for (pname, production) in playerProduction.items():
             self.players[pname].addResources(production)
 
+    # Move the robber to the selected hex and stealing from the targeted player
     def robber(self, pname, target, hex, verbose=True):
+        # Move the robber - it was a weird day
         for h in self.board:
             self.board[h].robber = (h == hex)
 
@@ -255,6 +268,7 @@ class BoardState:
         if verbose:
             print ("Robber is now blocking %s: %d - %s" % (hex, self.board[hex].number, self.board[hex].tile))
 
+    # Buy a development card
     def buyDevelopment(self, pname, verbose=True):
         player = self.players[pname]
         
@@ -281,7 +295,6 @@ class BoardState:
             return True
 
         # Knights move the Robber
-        # TODO - steal a resource
         if card == "Knight":
             player.developments.remove(card)
             player.military += 1
@@ -351,6 +364,7 @@ class BoardState:
         
         raise Exception("Attempted to play DevelopmentCard with unknown type: " + card)
 
+    # Execute Trades between two players
     def executeTrade(self, player, opponent, give, take):
         player.addResourcesArray(take)
         opponent.addResourcesArray(give)
@@ -358,6 +372,7 @@ class BoardState:
         player.removeResourcesArray(give)
         opponent.removeResourcesArray(take)
 
+    # Execute a trade with the merchant marines
     def tradeMaritime(self, pname, outgoing, incoming, verbose=True):
         player = self.players[pname]
         count = 4
@@ -375,6 +390,7 @@ class BoardState:
         player.addResources({incoming : 1})
         return True
 
+    # Just another path traversal
     def computeLongestRoad(self, pname, verbose=True):
         playerRoads = {}
         for (path, owner) in self.roads.items():
@@ -416,6 +432,7 @@ class BoardState:
                 self.players[pname].victory += 2
                 self.longestRoad = pname
 
+    
     def computeValidIntersectionPathPairs(self):
         pairs = []
         for i in range(len(self.graph.sortedIntersections)):

@@ -11,6 +11,7 @@ class TrainingEnvironment:
         self.turns = players + list(reversed(players))
         self._simulatePlayers(verbose=False)
 
+    # This method uses the bot supplied to the environment to make moves for the other players
     def _simulatePlayers(self, verbose=False):
         while len(self.turns) > 0:
             next = self.turns.pop(0)
@@ -29,20 +30,26 @@ class TrainingEnvironment:
     def state(self):
         return self.board.state()
 
+    # Step function for progressing the state based on the action, which is placing a Settlement and a Path
     def step(self, action, verbose=False):
         intersection, path = action
+        # Build the Settlement
         coordinate = self.board.graph.sortedIntersections[intersection].hexCoords[0]
         if not self.board.buildSettle("Red", coordinate, start=True, verbose=verbose):
             raise Exception(f"RED tried to settle at {coordinate} but was blocked")
+        # Build the path
         road = self.board.graph.sortedPaths[path].hexCoords[0]
         if not self.board.buildRoad("Red", road, start=True, verbose=verbose):
             raise Exception(f"RED tried to pave at {road} but was blocked")
         
+        # Move everone else 
         done = self._simulatePlayers(verbose=verbose)
         reward = 0 if not done else self.reward("Red")
 
+        # return to the training loop for the next model move
         return self.state(), reward, done
 
+    # The reward function
     def reward(self, pname, verbose=False):
         score = 0
 
@@ -52,7 +59,7 @@ class TrainingEnvironment:
         if verbose:
             print("Resource Probabilities: ", brick, lumber, ore, grain, wool)
 
-        # Development Card Potential = .63
+        # Development Card Potential = 1.26
         # 2 Road Building = 2 * 1/3  (2 Roads = 1/3 of a point)
         # 2 Monopoly = 2 * 1 (It's generally going to net you a victory point)
         # 2 Year of Plenty = 2 * 1 (Again, generally going to net you a victory point)
@@ -101,11 +108,6 @@ class TrainingEnvironment:
         score += (2/6) * road_score / 2
         if verbose:
             print("Score from Road Potential: ", (2/6) * brick * lumber)
-
-        # Road Connection Distance - is this too much of a bonus?
-        #score += .1 * (1 - (self.board.roadConnectionDistance(pname) / 4))
-        #if verbose:
-        #    print("Score from RCD: ", .1 * (1 - (self.board.roadConnectionDistance(pname) / 4)))
 
         #  Edge Guard
         for settlement in [k for k, v in self.board.settlements.items() if v == pname]:

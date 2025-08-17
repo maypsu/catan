@@ -6,17 +6,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 from tkinter import ttk
 
+# Chart used TK used in development to visualize the impact of the score function on 
+# individual intersections
 def create_grid_chart(row_groups, group_sizes, text_data=None, window_size=(800, 600)):
-    """
-    Create a scrollable grid chart with 7 columns and variable row groups, displaying text data
-    with column widths scaled to fit text content.
-    
-    Parameters:
-    row_groups (int): Number of row groups
-    group_sizes (list): List of integers (2 or 3) specifying sub-rows per group
-    text_data (list): 2D list of strings for cell content (optional)
-    window_size (tuple): Window size as (width, height) in pixels
-    """
     # Validate inputs
     if len(group_sizes) != row_groups:
         raise ValueError("group_sizes length must match row_groups")
@@ -64,8 +56,6 @@ def create_grid_chart(row_groups, group_sizes, text_data=None, window_size=(800,
     root.grid_rowconfigure(0, weight=1)
     root.grid_columnconfigure(0, weight=1)
     
-    # Create matplotlib figure
-    # Base figure width adjusted dynamically later
     fig, ax = plt.subplots(figsize=(10, 30))
     
     # Calculate maximum text length per column for scaling
@@ -77,7 +67,7 @@ def create_grid_chart(row_groups, group_sizes, text_data=None, window_size=(800,
             text_width = math.ceil(len(text) * .2)
             col_widths[j] = max(col_widths[j], text_width)
     
-    # Adjust figure width based on total text content
+    # Adjust figure width based on total text content - just play with the numbers based on the font
     fig.set_size_inches(max(8, sum(col_widths) * .625), max(2, total_rows * 0.6))
     
     # Create empty grid for background
@@ -148,25 +138,4 @@ def create_grid_chart(row_groups, group_sizes, text_data=None, window_size=(800,
         root.destroy()  # Destroy Tkinter window
     
     root.protocol("WM_DELETE_WINDOW", on_closing)
-    
-    # Start Tkinter main loop
     root.mainloop()
-
-# Example usage
-if __name__ == "__main__":
-    # Example: 5 groups with varying sub-rows and varied text lengths
-    example_text_data = [
-        ['Short', 'Medium Text', 'Very Long Text Here', 'A', 'B', 'C', 'D', 'F'],
-        ['A2', 'Longer Text', 'Short', 'E', 'F', 'G', 'H', 'F'],
-        ['A3', 'B3', 'C3', 'Very Long Entry', 'E3', 'F3', 'G3', 'F'],
-        ['A4', 'B4', 'C4', 'D4', 'Extra Long Text', 'F4', 'G4', 'F'],
-        ['A5', 'B5', 'C5', 'D5', 'E5', 'F5', 'Very Long', 'F'],
-        ['A6', 'B6', 'C6', 'D6', 'E6', 'F6', 'G6', 'F'],
-        ['A7', 'B7', 'C7', 'D7', 'E7', 'F7', 'G7', 'F'],
-        ['A8', 'B8', 'C8', 'D8', 'E8', 'F8', 'Very Long Text', 'F'],
-        ['A9', 'B9', 'C9', 'D9', 'E9', 'F9', 'G9', 'F'],
-        ['A10', 'B10', 'C10', 'D10', 'E10', 'F10', 'G10', 'F'],
-        ['A11', 'B11', 'C11', 'D11', 'E11', 'F11', 'G11', 'F'],
-        ['A12', 'B12', 'C12', 'D12', 'E12', 'F12', 'Extra Long', 'F']
-    ]
-    create_grid_chart(row_groups=6, group_sizes=[1, 1, 3, 2, 3, 2], text_data=example_text_data)
