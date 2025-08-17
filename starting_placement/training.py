@@ -20,31 +20,18 @@ def parseArguments():
     parser.add_argument("--time", type=float, default=1)
     parser.add_argument("--fresh", action="store_true")
     parser.add_argument("--random", action="store_true")
+    parser.add_argument("--segments", type=int, default=1)
     return parser.parse_args()
 
-if __name__ == "__main__":
-    args = parseArguments()
-
-    if args.fresh:
-        model = PolicyNetwork(54, 72)
-    else:
-        if not args.input:
-            raise Exception("Must specify --fresh or --input model")
-        model = tf.keras.models.load_model(args.input)
-
-    if args.random:
-        bot = RandoBot()
-    else:
-        bot = ModelBot(args.input)
-
+def run(model, bot, run_time, outfile):
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.01) 
     start_time = time.time()
 
     iterations = 0
-    while (time.time() - start_time) < args.time * 60:
+    while (time.time() - start_time) < run_time * 60:
         players = ["Red", "Blue", "Yellow", "Green"]
         random.shuffle(players)
-        env = TrainingEnvironment(BoardState(players), players, RandoBot())
+        env = TrainingEnvironment(BoardState(players), players, bot)
 
         with tf.GradientTape() as tape:
             logp = 0
@@ -71,6 +58,24 @@ if __name__ == "__main__":
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
         iterations += 1
 
-    model.save(args.output)
+    model.save(outfile)
     print ("Elapsed Time: ", str(time.time() - start_time), "Iterations:", iterations, flush=True)
-    visualization.draw_board(env.board, env.reward("Red"))
+
+if __name__ == "__main__":
+    args = parseArguments()
+
+    if args.fresh:
+        model = PolicyNetwork(54, 72)
+    else:
+        if not args.input: raise Exception("Must specify --fresh or --input model")
+        model = tf.keras.models.load_model(args.input)
+
+    if args.random:
+        bot = RandoBot()
+    else:
+        if not args.input: raise Exception("Must specify --random or --input model")
+        bot = ModelBot(args.input)
+
+    for i in range(args.segments):
+        outfile = args.output.format(i)
+        run(model, bot, args.time, outfile)
