@@ -3,32 +3,13 @@ import time
 
 import Defines as D
 from RobberMCTS import mctsRobber
+from .RandoBot import RandoBot
 import TradeCards
 
 # Heuristic based bot
-class BetterBot:
+class BetterBot(RandoBot):
     def __init__(self):
         self.statistics = [0, 0, 0, 0]
-
-    # Random placement - override this with model bot, if you're in to that
-    def initialPlace(self, player, board):
-        while True:
-            coordinate = pickRandom()
-            intersection = board.graph.intersections[coordinate]
-            if intersection.blockedSettle(board.settlements | board.cities):
-                continue
-
-            foundPath = None
-            for (path, _) in intersection.adjacent:
-                if not path.blockedRoad(board.roads):
-                    foundPath = path
-                    break
-            
-            if not foundPath:
-                continue
-
-            break
-        return coordinate, foundPath.hexCoords[0]    
 
     # Playing cards is overriden for Road Building to use the graph traversal algorithm
     def playCards(self, player, board, verbose=True):
@@ -83,7 +64,7 @@ class BetterBot:
                     return True
         
         return False
-    
+
     # Use the MCTS for robber placement
     def pickRobber(self, pname, board):
         hex, target = mctsRobber(pname, board)
@@ -197,7 +178,7 @@ def pickSettlement(pname, board, verbose=True):
     for intersection in intersections:
         scores.append((scoreIntersection(board, intersection, verbose=verbose), intersection))
 
-    scores.sort()
+    scores.sort(reverse=True)
 
     if scores and scores[0][0] > 0:
         return scores[0][1]

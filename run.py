@@ -7,6 +7,7 @@ import Defines as D
 import IntersectionGraph as IG
 import bots.RandoBot as RandoBot
 import bots.ModelBot as ModelBot
+import bots.BetterBot as BetterBot
 import visualization
 
 # This script plays the whole game loop and reports the win/loss statistics
@@ -16,6 +17,7 @@ def parseArguments():
     parser.add_argument("--input", default="fooling.keras", type=str)
     parser.add_argument("--range", default=10000, type=int)
     parser.add_argument("--visualize", action="store_true")
+    parser.add_argument("--better", action="store_true")
     return parser.parse_args()
 
 def playGame(bots, verbose=True):
@@ -97,7 +99,10 @@ def playGame(bots, verbose=True):
     return "none", board
 
 args = parseArguments()
-bots = { "Red" : ModelBot.ModelBot(args.input), "Blue" : RandoBot.RandoBot(), "Yellow" : RandoBot.RandoBot(), "Green" : RandoBot.RandoBot() }
+if args.better:
+    bots = { "Red" : BetterBot.BetterBot(), "Blue" : RandoBot.RandoBot(), "Yellow" : RandoBot.RandoBot(), "Green" : RandoBot.RandoBot() }
+else:
+    bots = { "Red" : ModelBot.ModelBot(args.input), "Blue" : RandoBot.RandoBot(), "Yellow" : RandoBot.RandoBot(), "Green" : RandoBot.RandoBot() }
 
 start_time = time.time()
 winners = {}

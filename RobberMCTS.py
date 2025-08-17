@@ -8,7 +8,7 @@ import visualization
 # Run the MCTS for choosing where the Robber token should be placed
 def mctsRobber(pname, board):
     root = build_tree("Red", board)
-    run_mcts(pname, board, root)
+    run_mcts(pname, board, root, iterations=100)
     best_child = max(root.children, key=lambda c: c.total_reward / c.visits if c.visits > 0 else float('-inf'))
 
     return best_child.move
@@ -22,15 +22,15 @@ class Node:
         self.visits = 0
         self.total_reward = 0.0
 
-# UCT formula for child selection
-def uct(parent_visits, child_visits, child_total_reward, exploration=1.41):
+# Upper Confidence Bound formula for child selection (pg. 585)
+def ucb(parent_visits, child_visits, child_total_reward, exploration=1.41):
     if child_visits == 0:
         return float('inf')
     return (child_total_reward / child_visits) + exploration * math.sqrt(math.log(parent_visits) / child_visits)
 
-# Select child using UCT
+# Select child using UCB
 def select_child(node):
-    return max(node.children, key=lambda c: uct(node.visits, c.visits, c.total_reward))
+    return max(node.children, key=lambda c: ucb(node.visits, c.visits, c.total_reward))
 
 # Simulate dice roll (2d6)
 def roll_dice():
@@ -77,7 +77,7 @@ def simulate(pname, board, move, num_turns=20):
     return reward
 
 # Run MCTS
-def run_mcts(pname, board, root, iterations=1000):
+def run_mcts(pname, board, root, iterations=100):
     for _ in range(iterations):
         child = select_child(root)
         reward = simulate(pname, board, child.move)

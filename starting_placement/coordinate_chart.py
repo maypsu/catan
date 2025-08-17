@@ -7,7 +7,8 @@ import tkinter as tk
 from tkinter import ttk
 
 # Chart used TK used in development to visualize the impact of the score function on 
-# individual intersections
+# individual intersections.  Not used in training or evaluation, just to better understand
+# the impact of the scoring function.
 def create_grid_chart(row_groups, group_sizes, text_data=None, window_size=(800, 600)):
     # Validate inputs
     if len(group_sizes) != row_groups:
